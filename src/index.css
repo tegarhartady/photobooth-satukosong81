@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .font-urban {
+    font-family: 'Russo One', sans-serif;
+  }
+  .font-street {
+    font-family: 'Bebas Neue', sans-serif;
+  }
+  .font-esports {
+    font-family: 'Chakra Petch', sans-serif;
+  }
+  .font-comic {
+    font-family: 'Titan One', 'Bangers', 'Luckiest Guy', cursive, sans-serif;
+  }
+  .font-body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+}
+
+/* Authentic Streetwear Box-Logo Red */
+.streetwear-box-logo {
+  background-color: #c40e1e;
+  box-shadow: 0 4px 0 #7e0813, 0 10px 25px rgba(196, 14, 30, 0.45);
+}
+
+/* Neon Red Streetwear Glow */
+.streetwear-red-glow {
+  box-shadow: 0 0 35px rgba(196, 14, 30, 0.6), 0 0 15px rgba(239, 68, 68, 0.4);
+}
+
+/* 3D Comic Text Shadows */
+.comic-text-3d {
+  color: #ffffff;
+  -webkit-text-stroke: 4px #b30013;
+  text-shadow:
+    0 1px 0 #85000c,
+    0 2px 0 #85000c,
+    0 3px 0 #85000c,
+    0 4px 0 #85000c,
+    0 5px 0 #6b000a,
+    0 6px 0 #520008,
+    0 8px 12px rgba(0, 0, 0, 0.7);
+}
+
+.comic-text-3d-lg {
+  color: #ffffff;
+  -webkit-text-stroke: 5px #9e0b18;
+  text-shadow:
+    0 1px 0 #7e0813,
+    0 2px 0 #7e0813,
+    0 3px 0 #7e0813,
+    0 4px 0 #64050d,
+    0 5px 0 #64050d,
+    0 6px 0 #4f0309,
+    0 7px 0 #3b0105,
+    0 12px 24px rgba(0, 0, 0, 0.9);
+}
+
+/* Urban E-Sports Outline Shadow */
+.urban-text-3d {
+  color: #ffffff;
+  letter-spacing: 0.04em;
+  text-shadow:
+    0 2px 0 #c40e1e,
+    0 4px 0 #8f0814,
+    0 6px 0 #57040b,
+    0 10px 20px rgba(0, 0, 0, 0.85);
+}
+
+.comic-badge-3d {
+  background-color: #c40e1e;
+  box-shadow: 0 4px 0 #7e0813, 0 6px 12px rgba(0, 0, 0, 0.6);
+}

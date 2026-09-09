@@ -1,0 +1,6 @@
+{
+  "name": "SatuKosong8 Photobooth",
+  "description": "Photobooth interaktif Satu.Kosong8 dengan background live photo kamera langsung, filter warna, dan strip foto.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
