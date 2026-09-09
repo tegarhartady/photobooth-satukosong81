@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { Maximize2, Minimize2, FlipHorizontal } from 'lucide-react';
 import { LiveCameraBackground } from './components/LiveCameraBackground';
 import { CenterCard } from './components/CenterCard';
+import { PhotoboothStepGuide } from './components/PhotoboothStepGuide';
 import { StartSessionPage } from './components/StartSessionPage';
 import { EnterCodeModal } from './components/EnterCodeModal';
 import { PackageSelectionPage } from './components/PackageSelectionPage';
@@ -680,10 +681,10 @@ export default function App() {
 
       {/* 2. Main Content Screens based on currentStep */}
       <div className="relative z-20 flex h-full w-full items-center justify-center p-3 sm:p-4 overflow-y-auto">
-        {/* Step 1: HOME / Standby with Step Guide and "Mulai" button */}
+        {/* Step 1: HOME / Standby Screen */}
         {currentStep === 'HOME' && !isCapturing && (
           <CenterCard
-            onStart={() => setCurrentStep('START_OPTIONS')}
+            onStart={() => setCurrentStep('STEP_GUIDE')}
             filter={filter}
             setFilter={setFilter}
             onFlipCamera={() =>
@@ -692,12 +693,20 @@ export default function App() {
           />
         )}
 
-        {/* Step 2: START_OPTIONS (Mari mulai sesi anda) */}
+        {/* Step 2: Separate 4 Steps Guide (after "Sentuh untuk Mulai") */}
+        {currentStep === 'STEP_GUIDE' && !isCapturing && (
+          <PhotoboothStepGuide
+            onNext={() => setCurrentStep('START_OPTIONS')}
+            onBack={() => setCurrentStep('HOME')}
+          />
+        )}
+
+        {/* Step 3: START_OPTIONS (Mari mulai sesi anda) */}
         {currentStep === 'START_OPTIONS' && !isCapturing && (
           <StartSessionPage
             onSelectHaveCode={() => setIsEnterCodeOpen(true)}
             onSelectNoCode={() => setCurrentStep('PACKAGE_SELECTION')}
-            onBack={() => setCurrentStep('HOME')}
+            onBack={() => setCurrentStep('STEP_GUIDE')}
           />
         )}
 

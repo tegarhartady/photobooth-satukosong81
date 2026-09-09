@@ -1,5 +1,6 @@
 export type AppStep =
   | 'HOME'
+  | 'STEP_GUIDE'
   | 'START_OPTIONS'
   | 'PACKAGE_SELECTION'
   | 'QRIS_PAYMENT'

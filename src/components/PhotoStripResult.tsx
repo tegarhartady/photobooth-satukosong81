@@ -17,9 +17,14 @@ import {
   Copy,
   Check,
   Play,
+  QrCode,
+  Plus,
+  Minus,
+  PlusCircle,
 } from 'lucide-react';
 import { RecordedShot } from '../types/photobooth';
 import { QRCodeDisplay } from './QRCodeDisplay';
+import { ExtraPrintQrisModal } from './ExtraPrintQrisModal';
 
 interface PhotoStripResultProps {
   stripUrl1: string | null;
@@ -69,6 +74,14 @@ export const PhotoStripResult: React.FC<PhotoStripResultProps> = ({
   // Active playing live video in gallery
   const [activePlayingVideoId, setActivePlayingVideoId] = useState<string | null>(null);
 
+  // Extra Print (Tambah Cetak Foto) State
+  const PRICE_PER_EXTRA_PRINT = 2000;
+  const [isExtraPrintQrisOpen, setIsExtraPrintQrisOpen] = useState(false);
+  const [extraPrintQuantity, setExtraPrintQuantity] = useState(1);
+  const [extraPrintTarget, setExtraPrintTarget] = useState<'TWIN' | 'FRAME_1' | 'FRAME_2'>('TWIN');
+  const [extraPrintSuccessMessage, setExtraPrintSuccessMessage] = useState<string | null>(null);
+  const [totalExtraPrinted, setTotalExtraPrinted] = useState(0);
+
   if (!isOpen) return null;
 
   // Active strip URL to show in STRIPS tab
@@ -78,6 +91,19 @@ export const PhotoStripResult: React.FC<PhotoStripResultProps> = ({
       : stripSubView === 'FRAME_1'
       ? stripUrl1
       : stripUrl2 || stripUrl1;
+
+  // Extra print target URL & name helpers
+  const getExtraPrintTargetUrl = () => {
+    if (extraPrintTarget === 'FRAME_1') return stripUrl1 || activeStripUrl;
+    if (extraPrintTarget === 'FRAME_2') return stripUrl2 || stripUrl1;
+    return twinStripUrl || stripUrl1;
+  };
+
+  const getExtraPrintTargetName = () => {
+    if (extraPrintTarget === 'FRAME_1') return `Lembar 1 (${frame1Name})`;
+    if (extraPrintTarget === 'FRAME_2') return `Lembar 2 (${frame2Name})`;
+    return isSingleFrameMode ? 'Lembar Cetak Identik' : '2 Lembar Twin';
+  };
 
   // Filtered gallery shots
   const filteredShots = allShots.filter((shot) => {
@@ -100,34 +126,77 @@ export const PhotoStripResult: React.FC<PhotoStripResultProps> = ({
     link.click();
   };
 
-  const handlePrint = () => {
-    const urlToPrint = twinStripUrl || activeStripUrl;
+  const handlePrint = (customUrl?: string, copyCount: number = 1, pageTitle = 'Cetak SatuKosong8 Photobooth') => {
+    const urlToPrint = customUrl || twinStripUrl || activeStripUrl;
     if (!urlToPrint) return;
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
       window.print();
       return;
     }
+    const imagesHtml = Array(copyCount)
+      .fill(0)
+      .map(
+        () => `
+        <div class="print-page">
+          <img src="${urlToPrint}" />
+        </div>
+      `
+      )
+      .join('');
+
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Cetak SatuKosong8 Photobooth (2 Lembar)</title>
+          <title>${pageTitle}</title>
           <style>
-            body { margin: 0; display: flex; justify-content: center; align-items: center; background: #fff; }
+            @page { margin: 0; size: auto; }
+            body { margin: 0; padding: 0; background: #fff; font-family: sans-serif; }
+            .print-page { display: flex; justify-content: center; align-items: center; min-height: 100vh; page-break-after: always; width: 100%; }
+            .print-page:last-child { page-break-after: auto; }
             img { max-height: 98vh; width: auto; object-fit: contain; }
             @media print {
               body { margin: 0; }
+              .print-page { min-height: 100vh; }
               img { max-width: 100%; height: auto; }
             }
           </style>
         </head>
         <body>
-          <img src="${urlToPrint}" onload="window.print();window.close();" />
+          ${imagesHtml}
+          <script>
+            window.onload = function() {
+              window.print();
+              window.close();
+            };
+          </script>
         </body>
       </html>
     `);
     printWindow.document.close();
+  };
+
+  const handleExtraPrintPaymentSuccess = (quantity: number, totalPaid: number) => {
+    setIsExtraPrintQrisOpen(false);
+    setTotalExtraPrinted((prev) => prev + quantity);
+
+    const targetUrl = getExtraPrintTargetUrl();
+    const targetName = getExtraPrintTargetName();
+
+    setExtraPrintSuccessMessage(
+      `Pembayaran QRIS Rp ${totalPaid.toLocaleString('id-ID')} Berhasil! ${quantity} lembar foto tambahan (${targetName}) sedang dikirim ke printer kiosk.`
+    );
+
+    // Trigger printing automatically
+    setTimeout(() => {
+      handlePrint(targetUrl || undefined, quantity, `Cetak Tambahan ${quantity} Lembar - SatuKosong8`);
+    }, 400);
+
+    // Auto-clear message after 8 seconds
+    setTimeout(() => {
+      setExtraPrintSuccessMessage(null);
+    }, 8000);
   };
 
   // Send to Email simulation
@@ -322,9 +391,24 @@ export const PhotoStripResult: React.FC<PhotoStripResultProps> = ({
                 </div>
 
                 <div className="flex flex-col gap-2.5">
+                  {/* Success Alert Banner for Extra Prints */}
+                  {extraPrintSuccessMessage && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-3 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs flex items-start gap-2.5 shadow-md"
+                    >
+                      <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
+                      <div className="flex-1 text-left">
+                        <strong className="block font-bold text-white">Cetak Tambahan Berhasil!</strong>
+                        <span>{extraPrintSuccessMessage}</span>
+                      </div>
+                    </motion.div>
+                  )}
+
                   {/* 1. Primary Print Button - Signature Brand Red */}
                   <motion.button
-                    onClick={handlePrint}
+                    onClick={() => handlePrint()}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#b91c1c] via-[#dc2626] to-[#ef4444] px-5 py-3.5 text-sm sm:text-base font-bold text-white shadow-[0_8px_25px_rgba(220,38,38,0.5)] hover:brightness-110 cursor-pointer border border-white/20"
@@ -333,7 +417,135 @@ export const PhotoStripResult: React.FC<PhotoStripResultProps> = ({
                     <span>Cetak Fisik Sekarang ({isSingleFrameMode ? '2 Lembar Identik' : '2 Lembar Frame Berbeda'})</span>
                   </motion.button>
 
-                  {/* 2. Digital Download/Email */}
+                  {/* 2. Extra Print Section (Tambah Cetak Foto - QRIS Rp 2.000 / cetak) */}
+                  <div className="rounded-2xl border border-amber-500/40 bg-gradient-to-br from-amber-500/10 via-red-500/10 to-black/70 p-3.5 sm:p-4 text-left shadow-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className="h-8 w-8 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
+                          <PlusCircle className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <div className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5">
+                            Mau Nambah Cetak Foto Lagi?
+                          </div>
+                          <div className="text-[11px] text-zinc-400">
+                            Cetak fisik ekstra untuk teman atau kenang-kenangan
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Price Badge */}
+                      <span className="rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-2.5 py-1 text-[11px] font-black text-zinc-950 shadow">
+                        Rp 2.000 / cetak
+                      </span>
+                    </div>
+
+                    {/* Controls: Target Frame (if dual frame) & Quantity Stepper */}
+                    <div className="mt-3 pt-2.5 border-t border-white/10 flex flex-col gap-2.5">
+                      {!isSingleFrameMode && (
+                        <div>
+                          <label className="text-[11px] text-zinc-400 font-semibold block mb-1">
+                            Pilih Lembar yang Dicetak:
+                          </label>
+                          <div className="grid grid-cols-3 gap-1.5 text-xs">
+                            <button
+                              type="button"
+                              onClick={() => setExtraPrintTarget('TWIN')}
+                              className={`py-1.5 px-2 rounded-xl font-bold transition-all cursor-pointer truncate text-center ${
+                                extraPrintTarget === 'TWIN'
+                                  ? 'bg-amber-400 text-zinc-950 shadow'
+                                  : 'bg-white/5 text-zinc-400 hover:text-white border border-white/10'
+                              }`}
+                            >
+                              Twin (2 Strip)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setExtraPrintTarget('FRAME_1')}
+                              className={`py-1.5 px-2 rounded-xl font-bold transition-all cursor-pointer truncate text-center ${
+                                extraPrintTarget === 'FRAME_1'
+                                  ? 'bg-amber-400 text-zinc-950 shadow'
+                                  : 'bg-white/5 text-zinc-400 hover:text-white border border-white/10'
+                              }`}
+                            >
+                              Lembar 1
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setExtraPrintTarget('FRAME_2')}
+                              className={`py-1.5 px-2 rounded-xl font-bold transition-all cursor-pointer truncate text-center ${
+                                extraPrintTarget === 'FRAME_2'
+                                  ? 'bg-amber-400 text-zinc-950 shadow'
+                                  : 'bg-white/5 text-zinc-400 hover:text-white border border-white/10'
+                              }`}
+                            >
+                              Lembar 2
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Quantity Stepper & Price Calculation */}
+                      <div className="flex items-center justify-between bg-black/40 p-2.5 rounded-xl border border-white/10">
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setExtraPrintQuantity((q) => Math.max(1, q - 1))}
+                            disabled={extraPrintQuantity <= 1}
+                            className="h-8 w-8 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30 flex items-center justify-center text-white transition-colors cursor-pointer"
+                            aria-label="Kurangi jumlah cetak"
+                          >
+                            <Minus className="h-4 w-4" />
+                          </button>
+                          <span className="font-mono font-bold text-sm sm:text-base text-white px-1">
+                            {extraPrintQuantity} Lembar
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setExtraPrintQuantity((q) => Math.min(10, q + 1))}
+                            disabled={extraPrintQuantity >= 10}
+                            className="h-8 w-8 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30 flex items-center justify-center text-white transition-colors cursor-pointer"
+                            aria-label="Tambah jumlah cetak"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </button>
+                        </div>
+
+                        {/* Calculated Total Price */}
+                        <div className="text-right">
+                          <div className="text-[10px] text-zinc-400 uppercase font-semibold">
+                            Total Bayar
+                          </div>
+                          <div className="font-comic text-base sm:text-lg text-amber-400">
+                            Rp {(extraPrintQuantity * PRICE_PER_EXTRA_PRINT).toLocaleString('id-ID')}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Button to Open QRIS */}
+                      <motion.button
+                        type="button"
+                        onClick={() => setIsExtraPrintQrisOpen(true)}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-600 to-red-600 px-4 py-3 font-bold text-white text-xs sm:text-sm shadow-md hover:brightness-110 cursor-pointer border border-amber-300/30"
+                      >
+                        <QrCode className="h-4 w-4 text-white" />
+                        <span>
+                          Bayar QRIS Rp {(extraPrintQuantity * PRICE_PER_EXTRA_PRINT).toLocaleString('id-ID')} & Cetak ({extraPrintQuantity} Lembar)
+                        </span>
+                      </motion.button>
+                    </div>
+
+                    {totalExtraPrinted > 0 && (
+                      <div className="mt-2 text-[10px] text-zinc-400 flex items-center gap-1.5">
+                        <CheckCircle2 className="h-3 w-3 text-emerald-400" />
+                        <span>Sesi ini telah menambah cetak sebanyak <strong>{totalExtraPrinted} lembar</strong></span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 3. Digital Download/Email */}
                   <button
                     onClick={() => setMainTab('EMAIL_DRIVE')}
                     className="flex items-center justify-center gap-2 rounded-xl border border-purple-500/40 bg-purple-500/20 px-5 py-2.5 text-sm font-semibold text-purple-200 hover:bg-purple-500/30 cursor-pointer"
@@ -342,7 +554,7 @@ export const PhotoStripResult: React.FC<PhotoStripResultProps> = ({
                     <span>Kirim Semua Foto & Video ke Email / Scan QR ke HP</span>
                   </button>
 
-                  {/* 3. Finish Session & Return to Home (No Free Re-Shoot Loophole) */}
+                  {/* 4. Finish Session & Return to Home (No Free Re-Shoot Loophole) */}
                   <button
                     onClick={onClose}
                     className="flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-black/60 px-5 py-2.5 text-sm font-bold text-zinc-300 hover:bg-white/10 hover:text-white cursor-pointer"
@@ -691,6 +903,17 @@ export const PhotoStripResult: React.FC<PhotoStripResultProps> = ({
           )}
         </motion.div>
       </motion.div>
+
+      {/* Extra Print QRIS Payment Modal (Rp 2.000 / cetak) */}
+      <ExtraPrintQrisModal
+        isOpen={isExtraPrintQrisOpen}
+        onClose={() => setIsExtraPrintQrisOpen(false)}
+        printQuantity={extraPrintQuantity}
+        pricePerPrint={PRICE_PER_EXTRA_PRINT}
+        selectedStripName={getExtraPrintTargetName()}
+        previewImageUrl={getExtraPrintTargetUrl()}
+        onPaymentSuccess={handleExtraPrintPaymentSuccess}
+      />
     </AnimatePresence>
   );
 };
