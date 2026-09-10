@@ -32,17 +32,14 @@ export const PackageSelectionPage: React.FC<PackageSelectionPageProps> = ({
       </div>
 
       {/* Main Container */}
-      <div className="w-full rounded-[32px] border border-white/20 bg-black/65 p-8 sm:p-12 shadow-[0_25px_60px_rgba(0,0,0,0.7)] backdrop-blur-2xl text-center">
+      <div className="w-full rounded-[32px] border border-white/20 bg-black/75 p-6 sm:p-10 shadow-[0_25px_60px_rgba(0,0,0,0.8)] backdrop-blur-2xl text-center">
         {/* Header */}
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-4 py-1 text-xs font-bold text-zinc-200 border border-white/15">
-          <Sparkles className="h-3.5 w-3.5 text-yellow-400" /> Pilih Paket Sesi Foto
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-red-600/20 px-4 py-1 text-xs font-bold text-red-400 border border-red-500/30">
+          <Sparkles className="h-3.5 w-3.5 text-red-400" /> PILIH PAKET
         </span>
-        <h1 className="mt-3 font-comic text-3xl sm:text-4xl md:text-5xl text-white tracking-wide drop-shadow-md">
-          Pilih Paket Photobooth
+        <h1 className="mt-2 font-urban text-3xl sm:text-5xl text-white tracking-wide">
+          PILIH PAKET PHOTOBOOTH
         </h1>
-        <p className="mt-2 text-sm sm:text-base text-zinc-300 max-w-lg mx-auto">
-          Pilih paket yang paling sesuai dengan kebutuhan memorimu bersama teman atau pasangan!
-        </p>
 
         {/* 2 Package Cards */}
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
@@ -53,69 +50,44 @@ export const PackageSelectionPage: React.FC<PackageSelectionPageProps> = ({
               <motion.div
                 key={pkg.id}
                 whileHover={{ scale: 1.02, y: -4 }}
-                className={`relative flex flex-col justify-between rounded-3xl p-7 transition-all border-2 ${
+                className={`relative flex flex-col justify-between rounded-3xl p-6 sm:p-8 transition-all border-2 ${
                   isCombo
-                    ? 'border-yellow-400/70 bg-gradient-to-b from-zinc-900/90 to-zinc-950/95 shadow-[0_15px_40px_rgba(234,179,8,0.15)]'
-                    : 'border-white/20 bg-zinc-900/80 shadow-xl'
+                    ? 'border-red-500 bg-zinc-950/90 shadow-[0_15px_40px_rgba(239,68,68,0.2)]'
+                    : 'border-white/20 bg-zinc-950/70 shadow-lg'
                 }`}
               >
                 {/* Popular Badge */}
                 {isCombo && (
                   <div className="absolute -top-3.5 right-6">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-yellow-400 to-amber-500 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-zinc-950 shadow-lg">
-                      <Sparkles className="h-3 w-3" /> Paling Populer
+                    <span className="inline-flex items-center gap-1 rounded-full bg-red-600 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-white shadow-lg">
+                      <Sparkles className="h-3 w-3" /> Rekomendasi
                     </span>
                   </div>
                 )}
 
                 <div>
-                  {/* Package Title & Price */}
-                  <div className="flex flex-col gap-1 mb-3">
-                    <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
-                      Opsi Paket #{pkg.id === 'hemat' ? '1' : '2'}
+                  <h2 className="font-urban text-2xl sm:text-3xl text-white">
+                    {pkg.name}
+                  </h2>
+                  <div className="mt-1">
+                    <span className="font-urban text-3xl sm:text-4xl text-red-500 font-extrabold">
+                      {pkg.priceFormatted}
                     </span>
-                    <h2 className="font-comic text-2xl sm:text-3xl text-white">
-                      {pkg.name}
-                    </h2>
-                    <div className="flex items-baseline gap-1 mt-1">
-                      <span className="font-comic text-3xl sm:text-4xl text-white font-extrabold tracking-tight">
-                        {pkg.priceFormatted}
-                      </span>
-                    </div>
                   </div>
 
-                  {/* Tagline exactly as requested */}
-                  <p className="text-xs sm:text-sm text-zinc-300 min-h-[38px] leading-relaxed border-b border-white/10 pb-4">
-                    {pkg.tagline}
-                  </p>
-
-                  {/* Features list exactly as requested */}
-                  <div className="mt-5 space-y-3">
-                    <div className="flex items-center gap-3 text-sm text-zinc-200">
-                      <div className={`flex h-7 w-7 items-center justify-center rounded-lg ${isCombo ? 'bg-yellow-400/20 text-yellow-400' : 'bg-white/10 text-white'}`}>
-                        <Camera className="h-4 w-4" />
-                      </div>
-                      <span className="font-medium">
-                        <strong className="text-white font-bold">{pkg.sessions} sesi</strong> pemotretan
-                      </span>
+                  {/* Simple Features */}
+                  <div className="mt-6 space-y-2.5 text-sm text-zinc-200">
+                    <div className="flex items-center gap-2.5">
+                      <Check className="h-4 w-4 text-red-500 shrink-0" />
+                      <span><strong>{pkg.frames} Frame</strong> pilihan</span>
                     </div>
-
-                    <div className="flex items-center gap-3 text-sm text-zinc-200">
-                      <div className={`flex h-7 w-7 items-center justify-center rounded-lg ${isCombo ? 'bg-yellow-400/20 text-yellow-400' : 'bg-white/10 text-white'}`}>
-                        <Image className="h-4 w-4" />
-                      </div>
-                      <span className="font-medium">
-                        <strong className="text-white font-bold">{pkg.sheets} lembar foto</strong> cetak
-                      </span>
+                    <div className="flex items-center gap-2.5">
+                      <Check className="h-4 w-4 text-red-500 shrink-0" />
+                      <span><strong>{pkg.sheets} Lembar</strong> cetak fisik</span>
                     </div>
-
-                    <div className="flex items-center gap-3 text-sm text-zinc-200">
-                      <div className={`flex h-7 w-7 items-center justify-center rounded-lg ${isCombo ? 'bg-yellow-400/20 text-yellow-400' : 'bg-white/10 text-white'}`}>
-                        <Layers className="h-4 w-4" />
-                      </div>
-                      <span className="font-medium">
-                        <strong className="text-white font-bold">{pkg.frames} frame</strong> pilihan
-                      </span>
+                    <div className="flex items-center gap-2.5">
+                      <Check className="h-4 w-4 text-red-500 shrink-0" />
+                      <span><strong>{pkg.sessions} Sesi</strong> foto bebas</span>
                     </div>
                   </div>
                 </div>
@@ -126,13 +98,13 @@ export const PackageSelectionPage: React.FC<PackageSelectionPageProps> = ({
                     onClick={() => onSelectPackage(pkg)}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className={`flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 font-comic text-base sm:text-lg shadow-lg transition-all cursor-pointer ${
+                    className={`flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 font-urban text-lg font-bold shadow-lg transition-all cursor-pointer ${
                       isCombo
-                        ? 'bg-gradient-to-r from-yellow-400 to-amber-500 text-zinc-950 hover:from-yellow-300 hover:to-amber-400'
+                        ? 'bg-red-600 text-white hover:bg-red-700 shadow-red-600/30'
                         : 'bg-white text-zinc-950 hover:bg-zinc-200'
                     }`}
                   >
-                    <span>Pilih {pkg.name}</span>
+                    <span>PILIH PAKET INI</span>
                     <ArrowRight className="h-5 w-5" />
                   </motion.button>
                 </div>

@@ -108,18 +108,15 @@ export const LayoutSelectionPage: React.FC<LayoutSelectionPageProps> = ({
       <div className="relative w-full rounded-[36px] border border-white/20 bg-black/75 p-6 sm:p-8 md:p-10 shadow-[0_25px_60px_rgba(0,0,0,0.8)] backdrop-blur-2xl text-center">
         {/* Step Badge */}
         <div className="flex items-center justify-center gap-2 mb-2">
-          <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/20 px-3.5 py-1 text-xs font-bold text-blue-300 border border-blue-500/30">
-            <LayoutGrid className="h-3.5 w-3.5" /> Langkah 1: Pilihan Layout
+          <span className="inline-flex items-center gap-1 rounded-full bg-red-600/20 px-3.5 py-1 text-xs font-bold text-red-400 border border-red-500/30">
+            <LayoutGrid className="h-3.5 w-3.5" /> PILIH LAYOUT
           </span>
         </div>
 
         {/* Title */}
-        <h1 className="font-comic text-2xl sm:text-4xl text-white tracking-wide">
-          Pilih Layout Foto
+        <h1 className="font-urban text-3xl sm:text-5xl text-white tracking-wide">
+          PILIH LAYOUT FOTO
         </h1>
-        <h3 className="font-sans text-sm sm:text-base text-zinc-300 mt-1 max-w-xl mx-auto font-medium">
-          Tentukan jumlah pose foto kamu: pilihan layout <span className="text-white font-bold">4, 6, atau 8 foto</span> sebelum memilih frame.
-        </h3>
 
         {/* Layout Selection Cards */}
         <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 text-left">
@@ -133,20 +130,22 @@ export const LayoutSelectionPage: React.FC<LayoutSelectionPageProps> = ({
                 onClick={() => onSelectLayout(item.count)}
                 className={`relative rounded-3xl p-5 border-2 transition-all cursor-pointer flex flex-col justify-between ${
                   isSelected
-                    ? 'border-white bg-white/15 shadow-[0_10px_30px_rgba(255,255,255,0.2)]'
-                    : 'border-white/10 bg-zinc-900/60 hover:border-white/30 hover:bg-zinc-900/80'
+                    ? 'border-red-600 bg-red-950/40 shadow-[0_10px_30px_rgba(220,38,38,0.3)] ring-2 ring-red-500'
+                    : 'border-white/15 bg-zinc-950/70 hover:border-red-500/50 hover:bg-zinc-900/80'
                 }`}
               >
                 {/* Header row with badge & check */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-white/10 text-white border border-white/15">
+                    <span className={`text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${
+                      isSelected ? 'bg-red-600 text-white' : 'bg-white/10 text-white'
+                    }`}>
                       {item.badge}
                     </span>
                     <div
                       className={`h-6 w-6 rounded-full flex items-center justify-center border transition-all ${
                         isSelected
-                          ? 'bg-white border-white text-black shadow-md'
+                          ? 'bg-red-600 border-red-500 text-white shadow-md'
                           : 'border-white/30 bg-black/40 text-transparent'
                       }`}
                     >
@@ -154,26 +153,22 @@ export const LayoutSelectionPage: React.FC<LayoutSelectionPageProps> = ({
                     </div>
                   </div>
 
-                  {/* Title & subtitle */}
+                  {/* Title */}
                   <div className="flex items-baseline gap-2">
-                    <span className="font-comic text-3xl sm:text-4xl text-white">
+                    <span className="font-urban text-3xl sm:text-4xl text-white">
                       {item.count}
                     </span>
-                    <span className="font-comic text-lg sm:text-xl text-white">
+                    <span className="font-urban text-xl text-white">
                       Pose Foto
                     </span>
                   </div>
                   <p className="text-xs font-semibold text-zinc-300 mt-0.5">
                     {item.subtitle}
                   </p>
-
-                  <p className="text-xs text-zinc-400 mt-2 line-clamp-2">
-                    {item.description}
-                  </p>
                 </div>
 
                 {/* Schematic visual */}
-                <div className="mt-5 flex items-center justify-center p-3 rounded-2xl bg-black/40 border border-white/5">
+                <div className="mt-5 flex items-center justify-center p-3 rounded-2xl bg-black/60 border border-white/10">
                   {renderLayoutSchematic(item)}
                 </div>
 
@@ -186,10 +181,10 @@ export const LayoutSelectionPage: React.FC<LayoutSelectionPageProps> = ({
                   </span>
                   <span
                     className={`text-xs font-bold ${
-                      isSelected ? 'text-white' : 'text-zinc-500'
+                      isSelected ? 'text-red-400' : 'text-zinc-500'
                     }`}
                   >
-                    {isSelected ? 'Terpilih' : 'Klik untuk Pilih'}
+                    {isSelected ? '✓ Terpilih' : 'Pilih'}
                   </span>
                 </div>
               </motion.div>
@@ -211,9 +206,9 @@ export const LayoutSelectionPage: React.FC<LayoutSelectionPageProps> = ({
             onClick={onNext}
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
-            className="flex items-center gap-2 rounded-2xl bg-white px-8 py-3.5 font-comic text-base sm:text-lg text-zinc-950 shadow-[0_10px_25px_rgba(255,255,255,0.25)] hover:bg-zinc-100 transition-all cursor-pointer w-full sm:w-auto justify-center"
+            className="flex items-center gap-2 rounded-2xl bg-red-600 hover:bg-red-700 px-8 py-3.5 font-urban text-lg font-bold text-white shadow-[0_10px_25px_rgba(220,38,38,0.4)] transition-all cursor-pointer w-full sm:w-auto justify-center"
           >
-            <span>Lanjut ke Pemilihan Frame</span>
+            <span>LANJUT KE PILIH FRAME</span>
             <ArrowRight className="h-5 w-5" />
           </motion.button>
         </div>

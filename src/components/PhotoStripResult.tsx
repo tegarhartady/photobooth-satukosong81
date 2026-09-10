@@ -3,16 +3,13 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Download,
   Printer,
-  RefreshCw,
   X,
-  Sparkles,
   Layers,
   Image as ImageIcon,
   Mail,
   HardDrive,
   Film,
   CheckCircle2,
-  ArrowRight,
   ExternalLink,
   Copy,
   Check,
@@ -21,6 +18,7 @@ import {
   Plus,
   Minus,
   PlusCircle,
+  FileDown,
 } from 'lucide-react';
 import { RecordedShot } from '../types/photobooth';
 import { QRCodeDisplay } from './QRCodeDisplay';
@@ -42,7 +40,7 @@ interface PhotoStripResultProps {
 
 type MainTab = 'STRIPS' | 'GALLERY' | 'EMAIL_DRIVE';
 type StripSubView = 'TWIN' | 'FRAME_1' | 'FRAME_2';
-type GalleryFilter = 'ALL' | 'FRAME_1' | 'FRAME_2' | 'RETAKES' | 'LIVE';
+type GalleryFilter = 'ALL' | 'PHOTOS' | 'LIVE';
 
 export const PhotoStripResult: React.FC<PhotoStripResultProps> = ({
   stripUrl1,
@@ -68,13 +66,12 @@ export const PhotoStripResult: React.FC<PhotoStripResultProps> = ({
   const [emailSentSuccess, setEmailSentSuccess] = useState(false);
 
   // Drive state
-  const [isDriveSaved, setIsDriveSaved] = useState(false);
   const [copiedDriveLink, setCopiedDriveLink] = useState(false);
 
   // Active playing live video in gallery
   const [activePlayingVideoId, setActivePlayingVideoId] = useState<string | null>(null);
 
-  // Extra Print (Tambah Cetak Foto) State
+  // Extra Print State
   const PRICE_PER_EXTRA_PRINT = 2000;
   const [isExtraPrintQrisOpen, setIsExtraPrintQrisOpen] = useState(false);
   const [extraPrintQuantity, setExtraPrintQuantity] = useState(1);
@@ -107,15 +104,12 @@ export const PhotoStripResult: React.FC<PhotoStripResultProps> = ({
 
   // Filtered gallery shots
   const filteredShots = allShots.filter((shot) => {
-    if (galleryFilter === 'FRAME_1') return shot.frameIndex === 1 && shot.isAccepted;
-    if (galleryFilter === 'FRAME_2') return shot.frameIndex === 2 && shot.isAccepted;
-    if (galleryFilter === 'RETAKES') return !shot.isAccepted;
+    if (galleryFilter === 'PHOTOS') return true; // All static photos
     if (galleryFilter === 'LIVE') return Boolean(shot.livePhotoVideoUrl);
     return true; // ALL
   });
 
   const acceptedShotsCount = allShots.filter((s) => s.isAccepted).length;
-  const retakesCount = allShots.filter((s) => !s.isAccepted).length;
   const livePhotosCount = allShots.filter((s) => s.livePhotoVideoUrl).length;
 
   const handleDownloadStrip = () => {
@@ -126,7 +120,22 @@ export const PhotoStripResult: React.FC<PhotoStripResultProps> = ({
     link.click();
   };
 
-  const handlePrint = (customUrl?: string, copyCount: number = 1, pageTitle = 'Cetak SatuKosong8 Photobooth') => {
+  // Unduh Semua Foto Asli (JPG)
+  const handleDownloadAllStaticPhotos = () => {
+    const photosToDownload = allShots.filter((s) => s.isAccepted);
+    const target = photosToDownload.length > 0 ? photosToDownload : allShots;
+
+    target.forEach((shot, index) => {
+      setTimeout(() => {
+        const link = document.createElement('a');
+        link.download = `satukosong8-foto-L${shot.frameIndex}-pose-${shot.poseChar}.jpg`;
+        link.href = shot.photoUrl;
+        link.click();
+      }, index * 250);
+    });
+  };
+
+  const handlePrint = (customUrl?: string, copyCount: number = 1, pageTitle = 'Cetak SatuKosong8') => {
     const urlToPrint = customUrl || twinStripUrl || activeStripUrl;
     if (!urlToPrint) return;
     const printWindow = window.open('', '_blank');
@@ -185,21 +194,18 @@ export const PhotoStripResult: React.FC<PhotoStripResultProps> = ({
     const targetName = getExtraPrintTargetName();
 
     setExtraPrintSuccessMessage(
-      `Pembayaran QRIS Rp ${totalPaid.toLocaleString('id-ID')} Berhasil! ${quantity} lembar foto tambahan (${targetName}) sedang dikirim ke printer kiosk.`
+      `Pembayaran Rp ${totalPaid.toLocaleString('id-ID')} Berhasil! ${quantity} lembar (${targetName}) dicetak.`
     );
 
-    // Trigger printing automatically
     setTimeout(() => {
-      handlePrint(targetUrl || undefined, quantity, `Cetak Tambahan ${quantity} Lembar - SatuKosong8`);
+      handlePrint(targetUrl || undefined, quantity, `Cetak Tambahan - SatuKosong8`);
     }, 400);
 
-    // Auto-clear message after 8 seconds
     setTimeout(() => {
       setExtraPrintSuccessMessage(null);
-    }, 8000);
+    }, 6000);
   };
 
-  // Send to Email simulation
   const handleSendEmail = (e: React.FormEvent) => {
     e.preventDefault();
     if (!emailInput || !emailInput.includes('@')) return;
@@ -211,7 +217,7 @@ export const PhotoStripResult: React.FC<PhotoStripResultProps> = ({
     }, 1200);
   };
 
-  const driveLink = `https://drive.google.com/drive/folders/satukosong8-session-${Date.now().toString(36)}`;
+  const driveLink = `https://drive.google.com/drive/folders/satukosong8-${Date.now().toString(36)}`;
 
   const handleCopyDriveLink = () => {
     navigator.clipboard?.writeText(driveLink);
@@ -225,77 +231,78 @@ export const PhotoStripResult: React.FC<PhotoStripResultProps> = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-xl p-3 sm:p-5 overflow-y-auto"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-3 sm:p-5 overflow-y-auto"
       >
         <motion.div
-          initial={{ scale: 0.92, y: 20 }}
+          initial={{ scale: 0.94, y: 15 }}
           animate={{ scale: 1, y: 0 }}
-          exit={{ scale: 0.92, y: 20 }}
-          className="relative flex flex-col rounded-3xl border border-white/20 bg-zinc-950/95 p-5 sm:p-7 shadow-2xl max-w-4xl w-full text-white max-h-[92vh] overflow-y-auto"
+          exit={{ scale: 0.94, y: 15 }}
+          className="relative flex flex-col rounded-3xl border-2 border-red-100 bg-white p-5 sm:p-7 shadow-2xl max-w-4xl w-full text-zinc-900 max-h-[92vh] overflow-y-auto"
         >
-          {/* Top Bar: Title & Close */}
-          <div className="flex items-center justify-between border-b border-white/10 pb-4 mb-4">
+          {/* Top Bar: Clean Header & Close */}
+          <div className="flex items-center justify-between border-b border-red-100 pb-3 mb-4">
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="font-comic text-2xl sm:text-3xl text-white">
+                <span className="h-2.5 w-2.5 rounded-full bg-red-600 animate-pulse" />
+                <h2 className="font-comic text-xl sm:text-2xl font-black text-zinc-950">
                   SATU.KOSONG8 PHOTOBOOTH
                 </h2>
-                <span className="hidden sm:inline-flex rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-xs font-bold text-emerald-300 border border-emerald-500/30 items-center gap-1">
-                  <CheckCircle2 className="h-3 w-3" /> Sesi Selesai
+                <span className="inline-flex rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-bold text-red-700">
+                  Sesi Selesai
                 </span>
               </div>
-              <p className="text-xs text-zinc-400 mt-0.5">
+              <p className="text-xs text-zinc-500 mt-0.5">
                 {isSingleFrameMode
-                  ? `${packageName || 'Paket Hemat'} • 1 Sesi Foto (${frame1Name}) • Cetak 2 Lembar Identik`
-                  : `2 Sesi Foto Berbeda • Lembar 1 (${frame1Name}) & Lembar 2 (${frame2Name})`}
+                  ? `${packageName || 'Paket Hemat'} • 1 Sesi Foto (${frame1Name})`
+                  : `Paket Combo • Lembar 1 (${frame1Name}) & Lembar 2 (${frame2Name})`}
               </p>
             </div>
 
             <button
               onClick={onClose}
               aria-label="Tutup"
-              className="rounded-full bg-white/10 p-2 text-white/80 hover:bg-white/20 hover:text-white transition-colors cursor-pointer"
+              className="rounded-full bg-zinc-100 p-2 text-zinc-500 hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer"
             >
               <X className="h-5 w-5" />
             </button>
           </div>
 
-          {/* Primary Navigation Tabs */}
-          <div className="flex items-center gap-2 rounded-2xl bg-zinc-900/90 p-1.5 border border-white/10 mb-5 overflow-x-auto">
+          {/* Primary Navigation Tabs (Red & White Theme) */}
+          <div className="grid grid-cols-3 gap-2 rounded-2xl bg-zinc-100 p-1.5 border border-zinc-200 mb-5">
             <button
               onClick={() => setMainTab('STRIPS')}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer whitespace-nowrap flex-1 justify-center ${
+              className={`flex items-center gap-2 py-2 px-3 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer justify-center ${
                 mainTab === 'STRIPS'
-                  ? 'bg-white text-zinc-950 shadow-md'
-                  : 'text-zinc-400 hover:text-white'
+                  ? 'bg-red-600 text-white shadow-md'
+                  : 'text-zinc-600 hover:text-red-600'
               }`}
             >
               <Layers className="h-4 w-4" />
-              <span>Strip Cetak Fisik</span>
+              <span>Strip Cetak</span>
             </button>
 
             <button
               onClick={() => setMainTab('GALLERY')}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer whitespace-nowrap flex-1 justify-center ${
+              className={`flex items-center gap-2 py-2 px-3 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer justify-center ${
                 mainTab === 'GALLERY'
-                  ? 'bg-white text-zinc-950 shadow-md'
-                  : 'text-zinc-400 hover:text-white'
+                  ? 'bg-red-600 text-white shadow-md'
+                  : 'text-zinc-600 hover:text-red-600'
               }`}
             >
               <ImageIcon className="h-4 w-4" />
-              <span>Semua Foto & Live Photo ({allShots.length})</span>
+              <span>Foto & Live Video ({allShots.length})</span>
             </button>
 
             <button
               onClick={() => setMainTab('EMAIL_DRIVE')}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer whitespace-nowrap flex-1 justify-center ${
+              className={`flex items-center gap-2 py-2 px-3 rounded-xl font-bold text-xs sm:text-sm transition-all cursor-pointer justify-center ${
                 mainTab === 'EMAIL_DRIVE'
-                  ? 'bg-white text-zinc-950 shadow-md'
-                  : 'text-zinc-400 hover:text-white'
+                  ? 'bg-red-600 text-white shadow-md'
+                  : 'text-zinc-600 hover:text-red-600'
               }`}
             >
               <Mail className="h-4 w-4" />
-              <span>Kirim Email & Drive</span>
+              <span>Kirim Email / HP</span>
             </button>
           </div>
 
@@ -305,52 +312,52 @@ export const PhotoStripResult: React.FC<PhotoStripResultProps> = ({
               {/* Left Column: Strip Preview */}
               <div className="md:col-span-6 flex flex-col items-center gap-3">
                 {/* View switcher between Twin / Lembar 1 / Lembar 2 */}
-                <div className="flex items-center gap-1 rounded-xl bg-zinc-900 p-1 border border-white/10 text-xs font-bold w-full justify-center">
+                <div className="flex items-center gap-1 rounded-xl bg-zinc-100 p-1 border border-zinc-200 text-xs font-bold w-full justify-center">
                   <button
                     onClick={() => setStripSubView('TWIN')}
                     className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                       stripSubView === 'TWIN'
-                        ? 'bg-white text-zinc-950 shadow'
-                        : 'text-zinc-400 hover:text-white'
+                        ? 'bg-red-600 text-white shadow'
+                        : 'text-zinc-600 hover:text-red-600'
                     }`}
                   >
-                    {isSingleFrameMode ? '2 Lembar Cetak (Identik)' : '2 Lembar (Twin)'}
+                    {isSingleFrameMode ? '2 Lembar Cetak' : 'Twin (2 Lembar)'}
                   </button>
                   <button
                     onClick={() => setStripSubView('FRAME_1')}
                     className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                       stripSubView === 'FRAME_1'
-                        ? 'bg-white text-zinc-950 shadow'
-                        : 'text-zinc-400 hover:text-white'
+                        ? 'bg-red-600 text-white shadow'
+                        : 'text-zinc-600 hover:text-red-600'
                     }`}
                   >
-                    {isSingleFrameMode ? `Strip Tunggal (${frame1Name})` : `Lembar 1 (${frame1Name})`}
+                    Lembar 1
                   </button>
                   {!isSingleFrameMode && (
                     <button
                       onClick={() => setStripSubView('FRAME_2')}
                       className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
                         stripSubView === 'FRAME_2'
-                          ? 'bg-white text-zinc-950 shadow'
-                          : 'text-zinc-400 hover:text-white'
+                          ? 'bg-red-600 text-white shadow'
+                          : 'text-zinc-600 hover:text-red-600'
                       }`}
                     >
-                      Lembar 2 ({frame2Name})
+                      Lembar 2
                     </button>
                   )}
                 </div>
 
                 {/* Strip Canvas / Image */}
-                <div className="relative max-w-[280px] sm:max-w-[340px] max-h-[58vh] rounded-2xl overflow-hidden shadow-2xl border border-white/20 bg-black flex items-center justify-center p-1">
+                <div className="relative max-w-[280px] sm:max-w-[340px] max-h-[56vh] rounded-2xl overflow-hidden shadow-xl border-2 border-red-200 bg-zinc-900 flex items-center justify-center p-1">
                   {activeStripUrl ? (
                     <img
                       src={activeStripUrl}
-                      alt="Hasil Cetak Photobooth Satu.Kosong8"
-                      className="w-full h-auto max-h-[56vh] object-contain rounded-xl"
+                      alt="Hasil Cetak Photobooth"
+                      className="w-full h-auto max-h-[54vh] object-contain rounded-xl"
                     />
                   ) : (
                     <div className="p-8 text-center text-zinc-400 text-xs">
-                      Memuat pratinjau strip foto...
+                      Memuat strip foto...
                     </div>
                   )}
                 </div>
@@ -359,35 +366,12 @@ export const PhotoStripResult: React.FC<PhotoStripResultProps> = ({
               {/* Right Column: Actions & Details */}
               <div className="md:col-span-6 flex flex-col gap-4 text-center md:text-left">
                 <div>
-                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-1.5 mb-1.5">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-zinc-200 border border-white/15">
-                      <Sparkles className="h-3.5 w-3.5 text-yellow-400" /> Foto 2 Sesi Berbeda
-                    </span>
-                    {layoutCount && (
-                      <span className="rounded-full bg-blue-500/20 px-2.5 py-0.5 text-xs font-bold text-blue-300 border border-blue-500/30">
-                        Layout {layoutCount} Pose
-                      </span>
-                    )}
-                  </div>
-
-                  <h3 className="font-comic text-2xl text-white">
-                    Simpan & Cetak Hasil Fisik
+                  <h3 className="font-comic text-xl sm:text-2xl text-zinc-950 font-black">
+                    Cetak & Simpan Foto
                   </h3>
-
-                  <div className="mt-2 text-xs text-zinc-300 bg-white/5 p-3 rounded-2xl border border-white/10 space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-zinc-400">Lembar 1 Frame:</span>
-                      <span className="font-bold text-white">{frame1Name}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-zinc-400">Lembar 2 Frame:</span>
-                      <span className="font-bold text-white">{frame2Name}</span>
-                    </div>
-                    <div className="flex items-center justify-between pt-1 border-t border-white/10 text-emerald-400">
-                      <span>Status Foto:</span>
-                      <span className="font-semibold">Masing-masing foto pose berbeda!</span>
-                    </div>
-                  </div>
+                  <p className="text-xs text-zinc-500 mt-1">
+                    Silakan cetak fisik sekarang atau unduh file digital foto ke perangkat Anda.
+                  </p>
                 </div>
 
                 <div className="flex flex-col gap-2.5">
@@ -396,13 +380,10 @@ export const PhotoStripResult: React.FC<PhotoStripResultProps> = ({
                     <motion.div
                       initial={{ opacity: 0, y: -8 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="p-3 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs flex items-start gap-2.5 shadow-md"
+                      className="p-3 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs flex items-center gap-2 shadow-sm"
                     >
-                      <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0 mt-0.5" />
-                      <div className="flex-1 text-left">
-                        <strong className="block font-bold text-white">Cetak Tambahan Berhasil!</strong>
-                        <span>{extraPrintSuccessMessage}</span>
-                      </div>
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                      <span>{extraPrintSuccessMessage}</span>
                     </motion.div>
                   )}
 
@@ -411,156 +392,93 @@ export const PhotoStripResult: React.FC<PhotoStripResultProps> = ({
                     onClick={() => handlePrint()}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#b91c1c] via-[#dc2626] to-[#ef4444] px-5 py-3.5 text-sm sm:text-base font-bold text-white shadow-[0_8px_25px_rgba(220,38,38,0.5)] hover:brightness-110 cursor-pointer border border-white/20"
+                    className="flex items-center justify-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 px-5 py-3.5 text-sm sm:text-base font-black text-white shadow-lg shadow-red-600/30 transition-all cursor-pointer border border-red-500"
                   >
                     <Printer className="h-5 w-5 text-white" />
-                    <span>Cetak Fisik Sekarang ({isSingleFrameMode ? '2 Lembar Identik' : '2 Lembar Frame Berbeda'})</span>
+                    <span>Cetak Fisik ({isSingleFrameMode ? '2 Lembar' : 'Twin 2 Lembar'})</span>
                   </motion.button>
 
-                  {/* 2. Extra Print Section (Tambah Cetak Foto - QRIS Rp 2.000 / cetak) */}
-                  <div className="rounded-2xl border border-amber-500/40 bg-gradient-to-br from-amber-500/10 via-red-500/10 to-black/70 p-3.5 sm:p-4 text-left shadow-lg">
+                  {/* 2. Download Strip & Download All Static Photos */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={handleDownloadStrip}
+                      className="flex items-center justify-center gap-1.5 rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-xs font-bold text-zinc-800 hover:bg-zinc-50 transition-colors cursor-pointer"
+                    >
+                      <Download className="h-4 w-4 text-red-600" />
+                      <span>Unduh Strip (PNG)</span>
+                    </button>
+
+                    <button
+                      onClick={handleDownloadAllStaticPhotos}
+                      className="flex items-center justify-center gap-1.5 rounded-xl border border-red-300 bg-red-50 px-3 py-2.5 text-xs font-bold text-red-700 hover:bg-red-100 transition-colors cursor-pointer"
+                    >
+                      <FileDown className="h-4 w-4 text-red-600" />
+                      <span>Unduh Foto (JPG)</span>
+                    </button>
+                  </div>
+
+                  {/* 3. Extra Print Section (Tambah Cetak Foto - QRIS Rp 2.000 / cetak) */}
+                  <div className="rounded-2xl border border-red-200 bg-red-50/50 p-3.5 text-left shadow-sm">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
+                        <div className="h-7 w-7 rounded-lg bg-red-600 text-white flex items-center justify-center shrink-0">
                           <PlusCircle className="h-4 w-4" />
                         </div>
                         <div>
-                          <div className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5">
-                            Mau Nambah Cetak Foto Lagi?
+                          <div className="text-xs font-bold text-zinc-950">
+                            Tambah Cetak Lembar Ekstra
                           </div>
-                          <div className="text-[11px] text-zinc-400">
-                            Cetak fisik ekstra untuk teman atau kenang-kenangan
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Price Badge */}
-                      <span className="rounded-full bg-gradient-to-r from-amber-400 to-amber-500 px-2.5 py-1 text-[11px] font-black text-zinc-950 shadow">
-                        Rp 2.000 / cetak
-                      </span>
-                    </div>
-
-                    {/* Controls: Target Frame (if dual frame) & Quantity Stepper */}
-                    <div className="mt-3 pt-2.5 border-t border-white/10 flex flex-col gap-2.5">
-                      {!isSingleFrameMode && (
-                        <div>
-                          <label className="text-[11px] text-zinc-400 font-semibold block mb-1">
-                            Pilih Lembar yang Dicetak:
-                          </label>
-                          <div className="grid grid-cols-3 gap-1.5 text-xs">
-                            <button
-                              type="button"
-                              onClick={() => setExtraPrintTarget('TWIN')}
-                              className={`py-1.5 px-2 rounded-xl font-bold transition-all cursor-pointer truncate text-center ${
-                                extraPrintTarget === 'TWIN'
-                                  ? 'bg-amber-400 text-zinc-950 shadow'
-                                  : 'bg-white/5 text-zinc-400 hover:text-white border border-white/10'
-                              }`}
-                            >
-                              Twin (2 Strip)
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setExtraPrintTarget('FRAME_1')}
-                              className={`py-1.5 px-2 rounded-xl font-bold transition-all cursor-pointer truncate text-center ${
-                                extraPrintTarget === 'FRAME_1'
-                                  ? 'bg-amber-400 text-zinc-950 shadow'
-                                  : 'bg-white/5 text-zinc-400 hover:text-white border border-white/10'
-                              }`}
-                            >
-                              Lembar 1
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setExtraPrintTarget('FRAME_2')}
-                              className={`py-1.5 px-2 rounded-xl font-bold transition-all cursor-pointer truncate text-center ${
-                                extraPrintTarget === 'FRAME_2'
-                                  ? 'bg-amber-400 text-zinc-950 shadow'
-                                  : 'bg-white/5 text-zinc-400 hover:text-white border border-white/10'
-                              }`}
-                            >
-                              Lembar 2
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Quantity Stepper & Price Calculation */}
-                      <div className="flex items-center justify-between bg-black/40 p-2.5 rounded-xl border border-white/10">
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setExtraPrintQuantity((q) => Math.max(1, q - 1))}
-                            disabled={extraPrintQuantity <= 1}
-                            className="h-8 w-8 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30 flex items-center justify-center text-white transition-colors cursor-pointer"
-                            aria-label="Kurangi jumlah cetak"
-                          >
-                            <Minus className="h-4 w-4" />
-                          </button>
-                          <span className="font-mono font-bold text-sm sm:text-base text-white px-1">
-                            {extraPrintQuantity} Lembar
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => setExtraPrintQuantity((q) => Math.min(10, q + 1))}
-                            disabled={extraPrintQuantity >= 10}
-                            className="h-8 w-8 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-30 flex items-center justify-center text-white transition-colors cursor-pointer"
-                            aria-label="Tambah jumlah cetak"
-                          >
-                            <Plus className="h-4 w-4" />
-                          </button>
-                        </div>
-
-                        {/* Calculated Total Price */}
-                        <div className="text-right">
-                          <div className="text-[10px] text-zinc-400 uppercase font-semibold">
-                            Total Bayar
-                          </div>
-                          <div className="font-comic text-base sm:text-lg text-amber-400">
-                            Rp {(extraPrintQuantity * PRICE_PER_EXTRA_PRINT).toLocaleString('id-ID')}
+                          <div className="text-[11px] text-zinc-500">
+                            Rp 2.000 per lembar cetak
                           </div>
                         </div>
                       </div>
 
-                      {/* Button to Open QRIS */}
-                      <motion.button
-                        type="button"
-                        onClick={() => setIsExtraPrintQrisOpen(true)}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-600 to-red-600 px-4 py-3 font-bold text-white text-xs sm:text-sm shadow-md hover:brightness-110 cursor-pointer border border-amber-300/30"
-                      >
-                        <QrCode className="h-4 w-4 text-white" />
-                        <span>
-                          Bayar QRIS Rp {(extraPrintQuantity * PRICE_PER_EXTRA_PRINT).toLocaleString('id-ID')} & Cetak ({extraPrintQuantity} Lembar)
+                      {/* Quantity Stepper */}
+                      <div className="flex items-center gap-1.5 bg-white px-2 py-1 rounded-xl border border-red-200 shadow-sm">
+                        <button
+                          type="button"
+                          onClick={() => setExtraPrintQuantity((q) => Math.max(1, q - 1))}
+                          disabled={extraPrintQuantity <= 1}
+                          className="h-6 w-6 rounded bg-zinc-100 hover:bg-zinc-200 disabled:opacity-30 flex items-center justify-center text-zinc-700 transition-colors cursor-pointer"
+                        >
+                          <Minus className="h-3 w-3" />
+                        </button>
+                        <span className="font-bold text-xs text-zinc-900 px-1">
+                          {extraPrintQuantity}
                         </span>
-                      </motion.button>
+                        <button
+                          type="button"
+                          onClick={() => setExtraPrintQuantity((q) => Math.min(10, q + 1))}
+                          disabled={extraPrintQuantity >= 10}
+                          className="h-6 w-6 rounded bg-zinc-100 hover:bg-zinc-200 disabled:opacity-30 flex items-center justify-center text-zinc-700 transition-colors cursor-pointer"
+                        >
+                          <Plus className="h-3 w-3" />
+                        </button>
+                      </div>
                     </div>
 
-                    {totalExtraPrinted > 0 && (
-                      <div className="mt-2 text-[10px] text-zinc-400 flex items-center gap-1.5">
-                        <CheckCircle2 className="h-3 w-3 text-emerald-400" />
-                        <span>Sesi ini telah menambah cetak sebanyak <strong>{totalExtraPrinted} lembar</strong></span>
-                      </div>
-                    )}
+                    <motion.button
+                      type="button"
+                      onClick={() => setIsExtraPrintQrisOpen(true)}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="w-full flex items-center justify-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 py-2.5 font-bold text-white text-xs shadow-sm cursor-pointer"
+                    >
+                      <QrCode className="h-4 w-4" />
+                      <span>
+                        Bayar QRIS Rp {(extraPrintQuantity * PRICE_PER_EXTRA_PRINT).toLocaleString('id-ID')} & Cetak
+                      </span>
+                    </motion.button>
                   </div>
 
-                  {/* 3. Digital Download/Email */}
-                  <button
-                    onClick={() => setMainTab('EMAIL_DRIVE')}
-                    className="flex items-center justify-center gap-2 rounded-xl border border-purple-500/40 bg-purple-500/20 px-5 py-2.5 text-sm font-semibold text-purple-200 hover:bg-purple-500/30 cursor-pointer"
-                  >
-                    <Mail className="h-4 w-4" />
-                    <span>Kirim Semua Foto & Video ke Email / Scan QR ke HP</span>
-                  </button>
-
-                  {/* 4. Finish Session & Return to Home (No Free Re-Shoot Loophole) */}
+                  {/* 4. Finish Session & Return to Home */}
                   <button
                     onClick={onClose}
-                    className="flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-black/60 px-5 py-2.5 text-sm font-bold text-zinc-300 hover:bg-white/10 hover:text-white cursor-pointer"
+                    className="flex items-center justify-center gap-2 rounded-xl border border-zinc-200 bg-zinc-100 px-5 py-2.5 text-xs font-bold text-zinc-700 hover:bg-zinc-200 cursor-pointer transition-colors"
                   >
-                    <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-                    <span>Selesai Sesi (Keluar ke Halaman Awal)</span>
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                    <span>Selesai Sesi (Halaman Utama)</span>
                   </button>
                 </div>
               </div>
@@ -569,71 +487,59 @@ export const PhotoStripResult: React.FC<PhotoStripResultProps> = ({
 
           {/* TAB 2: SEMUA FOTO & LIVE PHOTO GALLERY */}
           {mainTab === 'GALLERY' && (
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3">
               {/* Header Info & Filter Chips */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-zinc-200 pb-2.5">
                 <div>
-                  <h3 className="font-comic text-xl text-white">
-                    Semua Foto Hasil Sesi & Bloopers
+                  <h3 className="font-comic text-lg font-black text-zinc-950">
+                    Koleksi Foto & Live Motion
                   </h3>
-                  <p className="text-xs text-zinc-400">
-                    Termasuk foto terpilih, retake/bloopers yang tersimpan, dan Live Photo motion!
+                  <p className="text-xs text-zinc-500">
+                    Foto tersimpan dalam format gambar asli (JPG) dan klip gerak (Live Video).
                   </p>
                 </div>
 
-                {/* Filter Pills */}
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <button
-                    onClick={() => setGalleryFilter('ALL')}
-                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                      galleryFilter === 'ALL'
-                        ? 'bg-white text-zinc-950'
-                        : 'bg-white/10 text-zinc-300 hover:bg-white/20'
-                    }`}
-                  >
-                    Semua ({allShots.length})
-                  </button>
-                  <button
-                    onClick={() => setGalleryFilter('FRAME_1')}
-                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                      galleryFilter === 'FRAME_1'
-                        ? 'bg-white text-zinc-950'
-                        : 'bg-white/10 text-zinc-300 hover:bg-white/20'
-                    }`}
-                  >
-                    {isSingleFrameMode ? 'Foto Utama' : 'Lembar 1'}
-                  </button>
-                  {!isSingleFrameMode && (
+                {/* Filter Pills & Batch Download Button */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-1 bg-zinc-100 p-1 rounded-xl border border-zinc-200 text-xs">
                     <button
-                      onClick={() => setGalleryFilter('FRAME_2')}
-                      className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                        galleryFilter === 'FRAME_2'
-                          ? 'bg-white text-zinc-950'
-                          : 'bg-white/10 text-zinc-300 hover:bg-white/20'
+                      onClick={() => setGalleryFilter('ALL')}
+                      className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                        galleryFilter === 'ALL'
+                          ? 'bg-red-600 text-white'
+                          : 'text-zinc-600 hover:text-red-600'
                       }`}
                     >
-                      Lembar 2
+                      Semua ({allShots.length})
                     </button>
-                  )}
+                    <button
+                      onClick={() => setGalleryFilter('PHOTOS')}
+                      className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                        galleryFilter === 'PHOTOS'
+                          ? 'bg-red-600 text-white'
+                          : 'text-zinc-600 hover:text-red-600'
+                      }`}
+                    >
+                      Foto Asli (JPG)
+                    </button>
+                    <button
+                      onClick={() => setGalleryFilter('LIVE')}
+                      className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                        galleryFilter === 'LIVE'
+                          ? 'bg-red-600 text-white'
+                          : 'text-zinc-600 hover:text-red-600'
+                      }`}
+                    >
+                      ⚡ Live Video ({livePhotosCount})
+                    </button>
+                  </div>
+
                   <button
-                    onClick={() => setGalleryFilter('RETAKES')}
-                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                      galleryFilter === 'RETAKES'
-                        ? 'bg-white text-zinc-950'
-                        : 'bg-white/10 text-zinc-300 hover:bg-white/20'
-                    }`}
+                    onClick={handleDownloadAllStaticPhotos}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow transition-colors cursor-pointer"
                   >
-                    Bloopers / Retake ({retakesCount})
-                  </button>
-                  <button
-                    onClick={() => setGalleryFilter('LIVE')}
-                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                      galleryFilter === 'LIVE'
-                        ? 'bg-yellow-400 text-zinc-950'
-                        : 'bg-white/10 text-zinc-300 hover:bg-white/20'
-                    }`}
-                  >
-                    ⚡ Live Photo ({livePhotosCount})
+                    <FileDown className="h-3.5 w-3.5" />
+                    <span>Unduh Semua Foto (JPG)</span>
                   </button>
                 </div>
               </div>
@@ -645,9 +551,9 @@ export const PhotoStripResult: React.FC<PhotoStripResultProps> = ({
                   return (
                     <div
                       key={shot.id}
-                      className="group relative flex flex-col rounded-2xl overflow-hidden border border-white/15 bg-zinc-900 shadow-md"
+                      className="group relative flex flex-col rounded-2xl overflow-hidden border border-zinc-200 bg-white shadow-sm hover:shadow-md transition-shadow"
                     >
-                      <div className="relative aspect-[4/3] w-full bg-black overflow-hidden">
+                      <div className="relative aspect-[4/3] w-full bg-zinc-900 overflow-hidden">
                         {shot.livePhotoVideoUrl && isPlaying ? (
                           <video
                             src={shot.livePhotoVideoUrl}
@@ -665,58 +571,59 @@ export const PhotoStripResult: React.FC<PhotoStripResultProps> = ({
                           />
                         )}
 
-                        {/* Top Badges */}
-                        <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
-                          <span className="rounded bg-black/75 px-1.5 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm border border-white/20">
-                            L{shot.frameIndex} • Pose {shot.poseChar}
+                        {/* Top Badge */}
+                        <div className="absolute top-2 left-2 flex items-center gap-1">
+                          <span className="rounded bg-black/75 px-1.5 py-0.5 text-[10px] font-black text-white">
+                            Pose {shot.poseChar}
                           </span>
                           {!shot.isAccepted && (
-                            <span className="rounded bg-amber-500/90 px-1.5 py-0.5 text-[9px] font-black text-zinc-950 uppercase tracking-tight">
-                              Blooper / Retake
+                            <span className="rounded bg-amber-500 px-1.5 py-0.5 text-[9px] font-black text-white">
+                              Retake
                             </span>
                           )}
                         </div>
 
-                        {/* Live Photo Button / Toggle */}
+                        {/* Live Photo Play Trigger */}
                         {shot.livePhotoVideoUrl && (
                           <button
                             onClick={() =>
                               setActivePlayingVideoId(isPlaying ? null : shot.id)
                             }
-                            className="absolute top-2 right-2 rounded-full bg-yellow-400/95 text-zinc-950 p-1.5 shadow-md hover:bg-yellow-300 transition-colors cursor-pointer"
-                            title={isPlaying ? 'Hentikan Live Photo' : 'Putar Live Photo'}
+                            className="absolute top-2 right-2 rounded-full bg-white/90 text-red-600 p-1.5 shadow-md hover:bg-white transition-colors cursor-pointer"
+                            title={isPlaying ? 'Hentikan Live Photo' : 'Putar Live Video'}
                           >
                             {isPlaying ? (
-                              <Film className="h-3 w-3" />
+                              <Film className="h-3 w-3 text-red-600" />
                             ) : (
-                              <Play className="h-3 w-3 fill-current" />
+                              <Play className="h-3 w-3 fill-current text-red-600" />
                             )}
                           </button>
                         )}
                       </div>
 
                       {/* Card Footer: Metadata & Download */}
-                      <div className="p-2 flex items-center justify-between bg-zinc-900/90 text-[11px]">
-                        <span className="text-zinc-400">Take #{shot.attempt}</span>
+                      <div className="p-2 flex items-center justify-between bg-zinc-50 border-t border-zinc-100 text-[11px]">
+                        <span className="text-zinc-500 font-semibold">Take #{shot.attempt}</span>
 
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1">
                           {shot.livePhotoVideoUrl && (
                             <a
                               href={shot.livePhotoVideoUrl}
                               download={`live-photo-L${shot.frameIndex}-pose-${shot.poseChar}.webm`}
-                              className="text-yellow-400 hover:text-yellow-300 p-1 rounded hover:bg-white/10"
-                              title="Unduh Klip Live Photo"
+                              className="text-zinc-600 hover:text-red-600 p-1 rounded hover:bg-zinc-200 transition-colors"
+                              title="Unduh Video Live Photo"
                             >
                               <Film className="h-3.5 w-3.5" />
                             </a>
                           )}
                           <a
                             href={shot.photoUrl}
-                            download={`foto-L${shot.frameIndex}-pose-${shot.poseChar}-take-${shot.attempt}.jpg`}
-                            className="text-zinc-300 hover:text-white p-1 rounded hover:bg-white/10"
-                            title="Unduh Foto Resolusi Penuh"
+                            download={`foto-L${shot.frameIndex}-pose-${shot.poseChar}.jpg`}
+                            className="text-red-600 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors font-bold flex items-center gap-0.5"
+                            title="Unduh Foto Statis (JPG)"
                           >
                             <Download className="h-3.5 w-3.5" />
+                            <span className="text-[10px]">JPG</span>
                           </a>
                         </div>
                       </div>
@@ -724,160 +631,92 @@ export const PhotoStripResult: React.FC<PhotoStripResultProps> = ({
                   );
                 })}
               </div>
-
-              {/* Bottom Email & Drive Trigger */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-white/5 p-3.5 rounded-2xl border border-white/10">
-                <div className="text-xs text-zinc-300">
-                  Total Tersimpan: <strong className="text-white">{acceptedShotsCount} Foto Utama</strong> +{' '}
-                  <strong className="text-amber-400">{retakesCount} Bloopers</strong> +{' '}
-                  <strong className="text-yellow-400">{livePhotosCount} Live Videos</strong>
-                </div>
-
-                <button
-                  onClick={() => setMainTab('EMAIL_DRIVE')}
-                  className="flex items-center justify-center gap-1.5 rounded-xl bg-purple-600 text-white px-4 py-2 text-xs font-bold hover:bg-purple-500 transition-colors cursor-pointer shadow-md"
-                >
-                  <Mail className="h-3.5 w-3.5" />
-                  <span>Kirim Semua ke Email / Scan QR Drive</span>
-                </button>
-              </div>
             </div>
           )}
 
-          {/* TAB 3: KIRIM VIA EMAIL & GOOGLE DRIVE */}
+          {/* TAB 3: KIRIM VIA EMAIL & SCAN HP */}
           {mainTab === 'EMAIL_DRIVE' && (
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
               {/* Left Column: Email Delivery Form */}
-              <div className="md:col-span-7 flex flex-col gap-4">
-                <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Mail className="h-5 w-5 text-purple-400" />
-                    <h3 className="font-comic text-lg text-white">
-                      Kirim Semua Foto ke Email Pelanggan
+              <div className="md:col-span-7 flex flex-col gap-3">
+                <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-200">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Mail className="h-5 w-5 text-red-600" />
+                    <h3 className="font-comic text-base sm:text-lg font-black text-zinc-950">
+                      Kirim Semua File ke Email
                     </h3>
                   </div>
-                  <p className="text-xs text-zinc-400 mb-4">
-                    Kami akan mengirimkan paket lengkap berisi 2 lembar strip foto, semua foto mentah
-                    tiap take, foto bloopers retake, dan video Live Photo ke email kamu!
+                  <p className="text-xs text-zinc-500 mb-3">
+                    Kami akan mengirimkan file foto cetak, foto asli (.jpg), dan live photo ke email Anda.
                   </p>
 
                   {emailSentSuccess ? (
-                    <div className="p-4 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-200 text-xs flex flex-col gap-2">
-                      <div className="flex items-center gap-2 font-bold text-emerald-300 text-sm">
-                        <CheckCircle2 className="h-5 w-5" />
-                        Terkirim Berhasil ke {emailInput}!
+                    <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs flex flex-col gap-1.5">
+                      <div className="flex items-center gap-2 font-bold text-emerald-700 text-sm">
+                        <CheckCircle2 className="h-4 w-4" />
+                        Terkirim ke {emailInput}!
                       </div>
-                      <p>
-                        Cek folder Inbox atau Spam email kamu. Tautan unduhan dan arsip digital
-                        Satu.Kosong8 photobooth telah dikirimkan.
-                      </p>
+                      <p>Silakan periksa folder Inbox atau Spam email Anda.</p>
                       <button
                         onClick={() => setEmailSentSuccess(false)}
-                        className="mt-1 text-xs underline text-emerald-400 hover:text-emerald-300 self-start cursor-pointer"
+                        className="mt-1 text-xs underline text-emerald-700 hover:text-emerald-800 self-start cursor-pointer"
                       >
                         Kirim ke email lain
                       </button>
                     </div>
                   ) : (
-                    <form onSubmit={handleSendEmail} className="flex flex-col gap-3">
+                    <form onSubmit={handleSendEmail} className="flex flex-col gap-2.5">
                       <div>
-                        <label className="block text-xs font-bold text-zinc-300 mb-1">
-                          Alamat Email Tujuan:
-                        </label>
                         <input
                           type="email"
                           required
                           value={emailInput}
                           onChange={(e) => setEmailInput(e.target.value)}
-                          placeholder="contoh: customer@gmail.com"
-                          className="w-full rounded-xl bg-black/60 border border-white/20 px-4 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-white/50"
+                          placeholder="Masukkan alamat email (contoh: nama@gmail.com)"
+                          className="w-full rounded-xl bg-white border border-zinc-300 px-3.5 py-2 text-xs sm:text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-red-500"
                         />
-                      </div>
-
-                      {/* Summary of Included Assets */}
-                      <div className="rounded-xl bg-zinc-900/80 p-3 text-xs text-zinc-300 space-y-1.5 border border-white/5">
-                        <div className="font-bold text-white text-[11px] uppercase tracking-wider mb-1">
-                          Paket yang akan dikirim:
-                        </div>
-                        <div className="flex items-center justify-between text-zinc-300">
-                          <span>• 2 Lembar Strip Cetak (Twin & Per-Frame)</span>
-                          <span className="font-mono text-emerald-400">HD PNG</span>
-                        </div>
-                        <div className="flex items-center justify-between text-zinc-300">
-                          <span>• Foto Mentah Per Take ({acceptedShotsCount} Pose)</span>
-                          <span className="font-mono text-emerald-400">Asli JPEG</span>
-                        </div>
-                        <div className="flex items-center justify-between text-zinc-300">
-                          <span>• Foto Retake & Bloopers ({retakesCount} Take)</span>
-                          <span className="font-mono text-amber-400">Tersimpan</span>
-                        </div>
-                        <div className="flex items-center justify-between text-zinc-300">
-                          <span>• Video Klip Live Photo ({livePhotosCount} Klip)</span>
-                          <span className="font-mono text-yellow-400">WebM Motion</span>
-                        </div>
                       </div>
 
                       <button
                         type="submit"
                         disabled={isSendingEmail || !emailInput}
-                        className="flex items-center justify-center gap-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-comic text-sm py-3 px-5 transition-colors cursor-pointer shadow-lg disabled:opacity-50"
+                        className="flex items-center justify-center gap-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs sm:text-sm py-2.5 px-4 transition-colors cursor-pointer shadow-md disabled:opacity-50"
                       >
                         <Mail className="h-4 w-4" />
-                        <span>{isSendingEmail ? 'Mengirim Berkas...' : 'Kirim Sekarang ke Email'}</span>
+                        <span>{isSendingEmail ? 'Mengirim...' : 'Kirim Berkas Sekarang'}</span>
                       </button>
                     </form>
                   )}
                 </div>
-
-                {/* Photobox Kiosk Physical & Cloud Pickup Guide */}
-                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-3.5">
-                  <div className="h-10 w-10 rounded-xl bg-red-500/20 border border-red-500/40 flex items-center justify-center text-red-400 shrink-0">
-                    <Printer className="h-5 w-5" />
-                  </div>
-                  <div className="text-left">
-                    <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                      Pengambilan Cetak Fisik & Arsip Digital Kiosk
-                    </div>
-                    <div className="text-[11px] text-zinc-400 mt-0.5 leading-relaxed">
-                      Ambil 2 lembar hasil cetakan dari slot printer di bawah bilik booth. Gunakan scan QR di samping untuk menyimpan arsip foto digital ke HP kamu.
-                    </div>
-                  </div>
-                </div>
               </div>
 
-              {/* Right Column: Google Drive & QR Code Scan */}
-              <div className="md:col-span-5 flex flex-col gap-4">
-                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex flex-col items-center text-center">
-                  <div className="flex items-center gap-2 mb-2">
-                    <HardDrive className="h-5 w-5 text-blue-400" />
-                    <h3 className="font-comic text-lg text-white">
-                      Akses Google Drive Sesi
+              {/* Right Column: QR Code Scan to Mobile */}
+              <div className="md:col-span-5 flex flex-col gap-3">
+                <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-200 flex flex-col items-center text-center">
+                  <div className="flex items-center gap-2 mb-1">
+                    <HardDrive className="h-5 w-5 text-red-600" />
+                    <h3 className="font-comic text-base sm:text-lg font-black text-zinc-950">
+                      Scan QR ke HP
                     </h3>
                   </div>
-                  <p className="text-xs text-zinc-400 mb-3 max-w-xs">
-                    Scan QR code ini dari kamera HP untuk langsung membuka dan menyimpan folder cloud
-                    sesi photobooth kamu:
+                  <p className="text-xs text-zinc-500 mb-2">
+                    Arahkan kamera HP ke QR Code untuk menyimpan foto langsung:
                   </p>
 
-                  {/* QR Code for Mobile Phone Camera */}
-                  <div className="my-1">
-                    <QRCodeDisplay value={driveLink} size={140} />
+                  <div className="my-1 bg-white p-2.5 rounded-2xl border border-zinc-200 shadow-sm">
+                    <QRCodeDisplay value={driveLink} size={130} />
                   </div>
 
-                  <span className="text-[11px] text-zinc-400 mt-2">
-                    Scan dengan kamera HP kamu 📱
-                  </span>
-
                   {/* Copy Link / Open Drive button */}
-                  <div className="flex items-center gap-2 w-full mt-3">
+                  <div className="flex items-center gap-2 w-full mt-2">
                     <button
                       onClick={handleCopyDriveLink}
-                      className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-white/20 bg-white/10 py-2 px-3 text-xs font-semibold text-white hover:bg-white/20 transition-colors cursor-pointer"
+                      className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-zinc-300 bg-white py-2 px-3 text-xs font-bold text-zinc-700 hover:bg-zinc-100 transition-colors cursor-pointer"
                     >
                       {copiedDriveLink ? (
                         <>
-                          <Check className="h-3.5 w-3.5 text-emerald-400" />
-                          <span className="text-emerald-400">Tersalin!</span>
+                          <Check className="h-3.5 w-3.5 text-emerald-600" />
+                          <span className="text-emerald-600">Tersalin!</span>
                         </>
                       ) : (
                         <>
@@ -891,10 +730,10 @@ export const PhotoStripResult: React.FC<PhotoStripResultProps> = ({
                       href={driveLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-1 rounded-xl bg-blue-600 hover:bg-blue-500 text-white py-2 px-3 text-xs font-semibold transition-colors"
+                      className="flex items-center justify-center gap-1 rounded-xl bg-red-600 hover:bg-red-700 text-white py-2 px-3 text-xs font-bold transition-colors"
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
-                      <span>Buka Drive</span>
+                      <span>Buka</span>
                     </a>
                   </div>
                 </div>

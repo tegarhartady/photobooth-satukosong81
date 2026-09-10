@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, Camera, Check, Palette, Sparkles, Layers, Copy } from 'lucide-react';
+import { ArrowLeft, Camera, Check, Palette, Sparkles, Layers, Copy, PlusCircle, Settings2 } from 'lucide-react';
 import {
   PHOTO_FRAME_OPTIONS,
   PhotoFrameOption,
   PhotoLayoutCount,
   mapTakesToSlots,
 } from '../types/photobooth';
+import { AddFrameModal } from './AddFrameModal';
 
 interface FrameSelectionPageProps {
   selectedLayout: PhotoLayoutCount;
@@ -14,8 +15,12 @@ interface FrameSelectionPageProps {
   activePackageName?: string;
   selectedFrame1: PhotoFrameOption;
   selectedFrame2: PhotoFrameOption;
+  availableFrames?: PhotoFrameOption[];
   onSelectFrame1: (frame: PhotoFrameOption) => void;
   onSelectFrame2: (frame: PhotoFrameOption) => void;
+  onFrameAdded?: (frame: PhotoFrameOption) => void;
+  onFrameDeleted?: (frameId: string) => void;
+  onRefreshFrames?: () => Promise<void>;
   onStartPhotoSession: () => void;
   onBack: () => void;
 }
@@ -26,12 +31,17 @@ export const FrameSelectionPage: React.FC<FrameSelectionPageProps> = ({
   activePackageName,
   selectedFrame1,
   selectedFrame2,
+  availableFrames = PHOTO_FRAME_OPTIONS,
   onSelectFrame1,
   onSelectFrame2,
+  onFrameAdded,
+  onFrameDeleted,
+  onRefreshFrames,
   onStartPhotoSession,
   onBack,
 }) => {
   const [activeFrameTab, setActiveFrameTab] = useState<1 | 2>(1);
+  const [isAddFrameModalOpen, setIsAddFrameModalOpen] = useState(false);
 
   const isSingleFrameMode = allowedFramesCount === 1;
 
@@ -174,40 +184,29 @@ export const FrameSelectionPage: React.FC<FrameSelectionPageProps> = ({
       <div className="relative w-full rounded-[36px] border border-white/20 bg-black/80 p-6 sm:p-8 md:p-9 shadow-[0_25px_60px_rgba(0,0,0,0.8)] backdrop-blur-2xl text-center">
         {/* Step Badge */}
         <div className="flex items-center justify-center gap-2 mb-2 flex-wrap">
-          <span className="inline-flex items-center gap-1 rounded-full bg-pink-500/20 px-3.5 py-1 text-xs font-bold text-pink-300 border border-pink-500/30">
-            <Palette className="h-3.5 w-3.5" />
-            {isSingleFrameMode ? 'Langkah 2: Pilihan 1 Frame' : 'Langkah 2: Pilihan 2 Frame Berbeda'}
+          <span className="inline-flex items-center gap-1 rounded-full bg-red-600/20 px-3.5 py-1 text-xs font-bold text-red-400 border border-red-500/30">
+            <Palette className="h-3.5 w-3.5" /> PILIH FRAME
           </span>
-          <span className="rounded-full bg-blue-500/20 px-3 py-1 text-xs font-bold text-blue-300 border border-blue-500/30 flex items-center gap-1">
+          <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs font-bold text-zinc-200 border border-white/10 flex items-center gap-1">
             <Layers className="h-3 w-3" />
-            {isSingleFrameMode ? '1 Sesi • 2 Lembar Cetak' : '2 Sesi Berbeda • 4 Lembar Cetak'}
+            {isSingleFrameMode ? '1 Frame (2 Lembar Cetak)' : '2 Frame (4 Lembar Cetak)'}
           </span>
-          {activePackageName && (
-            <span className="rounded-full bg-amber-500/20 px-3 py-1 text-xs font-bold text-amber-300 border border-amber-500/30">
-              {activePackageName}
-            </span>
-          )}
         </div>
 
         {/* Title */}
-        <h1 className="font-comic text-2xl sm:text-4xl text-white tracking-wide">
-          {isSingleFrameMode ? 'Pilih 1 Frame Fotomu' : 'Pilih 2 Frame Berbeda'}
+        <h1 className="font-urban text-3xl sm:text-5xl text-white tracking-wide">
+          {isSingleFrameMode ? 'PILIH FRAME FOTO' : 'PILIH 2 FRAME BERBEDA'}
         </h1>
-        <p className="font-sans text-xs sm:text-sm text-zinc-300 mt-1 max-w-xl mx-auto font-medium">
-          {isSingleFrameMode
-            ? 'Paket kamu mencakup 1 desain frame favorit untuk sesi pemotretan ini (dicetak 2 lembar identik).'
-            : 'Setiap sesi menghasilkan strip cetak 2 versi. Kamu bisa memilih 2 warna frame berbeda untuk masing-masing strip foto!'}
-        </p>
 
         {/* Frame Selector Tabs / Single Frame Indicator */}
         <div className="mt-5 flex flex-wrap items-center justify-center gap-2.5">
           {isSingleFrameMode ? (
-            <div className="flex items-center gap-2 rounded-2xl bg-white/15 px-5 py-2.5 text-xs sm:text-sm font-bold text-white border border-white/30 shadow-lg">
+            <div className="flex items-center gap-2 rounded-2xl bg-white px-5 py-2.5 text-xs sm:text-sm font-bold text-zinc-950 border border-red-500 shadow-md">
               <div
                 className="h-4 w-4 rounded-full border border-black/40 shadow-sm"
                 style={{ backgroundColor: selectedFrame1.bgColor }}
               />
-              <span>Frame Aktif: {selectedFrame1.name} ({selectedFrame1.tagline})</span>
+              <span>Frame: {selectedFrame1.name}</span>
             </div>
           ) : (
             <>
@@ -216,7 +215,7 @@ export const FrameSelectionPage: React.FC<FrameSelectionPageProps> = ({
                 onClick={() => setActiveFrameTab(1)}
                 className={`flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs sm:text-sm font-bold transition-all cursor-pointer border ${
                   activeFrameTab === 1
-                    ? 'bg-white text-zinc-950 border-white shadow-[0_4px_20px_rgba(255,255,255,0.25)] scale-105'
+                    ? 'bg-red-600 text-white border-red-600 shadow-lg scale-105'
                     : 'bg-zinc-900/80 text-zinc-300 border-white/15 hover:bg-zinc-800'
                 }`}
               >
@@ -232,7 +231,7 @@ export const FrameSelectionPage: React.FC<FrameSelectionPageProps> = ({
                 onClick={() => setActiveFrameTab(2)}
                 className={`flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs sm:text-sm font-bold transition-all cursor-pointer border ${
                   activeFrameTab === 2
-                    ? 'bg-white text-zinc-950 border-white shadow-[0_4px_20px_rgba(255,255,255,0.25)] scale-105'
+                    ? 'bg-red-600 text-white border-red-600 shadow-lg scale-105'
                     : 'bg-zinc-900/80 text-zinc-300 border-white/15 hover:bg-zinc-800'
                 }`}
               >
@@ -276,13 +275,24 @@ export const FrameSelectionPage: React.FC<FrameSelectionPageProps> = ({
                   </>
                 )}
               </span>
-              <span className="text-[11px] font-mono text-zinc-400">
-                {currentActiveFrame.name}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-mono text-zinc-400 hidden sm:inline">
+                  {currentActiveFrame.name}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsAddFrameModalOpen(true)}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-full border border-red-500/40 bg-red-500/15 text-red-300 hover:bg-red-500/25 text-[10px] font-bold transition-all cursor-pointer"
+                  title="Tambah frame baru atau sinkronisasi dengan backend POS"
+                >
+                  <PlusCircle className="h-3 w-3 text-red-400" />
+                  <span>+ Tambah Frame POS</span>
+                </button>
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-              {PHOTO_FRAME_OPTIONS.map((frame) => {
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-[380px] overflow-y-auto pr-1">
+              {availableFrames.map((frame) => {
                 const isSelected = currentActiveFrame.id === frame.id;
                 return (
                   <motion.div
@@ -318,23 +328,30 @@ export const FrameSelectionPage: React.FC<FrameSelectionPageProps> = ({
                         )}
                       </div>
 
-                      <span
-                        className="text-[9px] font-bold px-2 py-0.5 rounded-full"
-                        style={{
-                          backgroundColor: frame.badgeBg,
-                          color: frame.badgeTextColor,
-                        }}
-                      >
-                        {frame.tagline}
-                      </span>
+                      <div className="flex items-center gap-1">
+                        {frame.isCustom && (
+                          <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded bg-red-500 text-white shadow-sm">
+                            POS
+                          </span>
+                        )}
+                        <span
+                          className="text-[9px] font-bold px-2 py-0.5 rounded-full truncate max-w-[80px]"
+                          style={{
+                            backgroundColor: frame.badgeBg,
+                            color: frame.badgeTextColor,
+                          }}
+                        >
+                          {frame.tagline}
+                        </span>
+                      </div>
                     </div>
 
                     {/* Frame Name */}
                     <div>
-                      <div className="font-comic text-xs sm:text-sm text-white font-bold">
+                      <div className="font-comic text-xs sm:text-sm text-white font-bold truncate">
                         {frame.name}
                       </div>
-                      <div className="text-[10px] text-zinc-400 mt-0.5">
+                      <div className="text-[10px] text-zinc-400 mt-0.5 truncate">
                         {frame.tagline}
                       </div>
                     </div>
@@ -410,21 +427,37 @@ export const FrameSelectionPage: React.FC<FrameSelectionPageProps> = ({
           </button>
 
           <motion.button
+            id="start-photo-session-btn"
             type="button"
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             onClick={onStartPhotoSession}
-            className="flex items-center gap-2.5 rounded-2xl bg-white px-8 py-3.5 font-comic text-base sm:text-lg text-zinc-950 shadow-[0_10px_30px_rgba(255,255,255,0.3)] hover:bg-zinc-100 transition-all cursor-pointer w-full sm:w-auto justify-center"
+            className="flex items-center gap-2.5 rounded-2xl bg-red-600 hover:bg-red-700 px-8 py-3.5 font-urban text-lg font-bold text-white shadow-[0_10px_30px_rgba(220,38,38,0.4)] transition-all cursor-pointer w-full sm:w-auto justify-center"
           >
-            <Camera className="h-5 w-5 text-[#c40e1e]" />
+            <Camera className="h-5 w-5 text-white" />
             <span>
-              {isSingleFrameMode
-                ? `Mulai Foto (${totalTakesNeeded}x Take • 1 Frame Selesai Sekaligus)`
-                : `Mulai Foto (${totalTakesNeeded}x Take • 2 Frame Berbeda)`}
+              MULAI SESI FOTO ({totalTakesNeeded}X POSE)
             </span>
           </motion.button>
         </div>
       </div>
+
+      {/* Add & Manage Frame Modal via POS API */}
+      <AddFrameModal
+        isOpen={isAddFrameModalOpen}
+        onClose={() => setIsAddFrameModalOpen(false)}
+        frames={availableFrames}
+        onFrameAdded={(newFrame) => {
+          if (onFrameAdded) onFrameAdded(newFrame);
+          onSelectFrame1(newFrame);
+        }}
+        onFrameDeleted={(frameId) => {
+          if (onFrameDeleted) onFrameDeleted(frameId);
+        }}
+        onRefreshFromApi={async () => {
+          if (onRefreshFrames) await onRefreshFrames();
+        }}
+      />
     </motion.div>
   );
 };

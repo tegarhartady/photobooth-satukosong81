@@ -13,6 +13,8 @@ import { FrameSelectionPage } from './components/FrameSelectionPage';
 import { PhotoStripResult } from './components/PhotoStripResult';
 import { QuickPoseReviewModal } from './components/QuickPoseReviewModal';
 import { InterSessionTransition } from './components/InterSessionTransition';
+import { LiveCaptureStripPreview } from './components/LiveCaptureStripPreview';
+import { PhotoCustomizationPage, StickerItem, CustomFilter } from './components/PhotoCustomizationPage';
 import {
   AppStep,
   PhotoboothPackage,
@@ -24,6 +26,8 @@ import {
   RecordedShot,
   VoucherCode,
 } from './types/photobooth';
+import { fetchAllFrames } from './services/frameApi';
+import { posApi } from './services/posApi';
 
 type FilterType = 'normal' | 'warm' | 'vintage' | 'bw';
 
@@ -44,10 +48,46 @@ export default function App() {
   const [allowedFramesCount, setAllowedFramesCount] = useState<1 | 2>(2);
   const [activePackageName, setActivePackageName] = useState<string>('Paket Combo (2 Frame Berbeda)');
 
-  // Layout & 2 Frame choices
+  // Layout & Dynamic Frames
+  const [availableFrames, setAvailableFrames] = useState<PhotoFrameOption[]>(PHOTO_FRAME_OPTIONS);
   const [selectedLayout, setSelectedLayout] = useState<PhotoLayoutCount>(4);
   const [selectedFrame1, setSelectedFrame1] = useState<PhotoFrameOption>(PHOTO_FRAME_OPTIONS[0]);
   const [selectedFrame2, setSelectedFrame2] = useState<PhotoFrameOption>(PHOTO_FRAME_OPTIONS[1]);
+
+  // Load frames dynamically on mount (from cache / POS backend)
+  useEffect(() => {
+    fetchAllFrames().then((frames) => {
+      if (frames && frames.length > 0) {
+        setAvailableFrames(frames);
+        setSelectedFrame1((prev) => frames.find((f) => f.id === prev.id) || frames[0]);
+        setSelectedFrame2((prev) => frames.find((f) => f.id === prev.id) || frames[1] || frames[0]);
+      }
+    });
+  }, []);
+
+  const handleFrameAdded = (newFrame: PhotoFrameOption) => {
+    setAvailableFrames((prev) => {
+      const exists = prev.some((f) => f.id === newFrame.id);
+      return exists ? prev.map((f) => (f.id === newFrame.id ? newFrame : f)) : [...prev, newFrame];
+    });
+    setSelectedFrame1(newFrame);
+  };
+
+  const handleFrameDeleted = async (frameId: string) => {
+    await posApi.deleteFrame(frameId);
+    setAvailableFrames((prev) => prev.filter((f) => f.id !== frameId));
+    if (selectedFrame1.id === frameId) {
+      setSelectedFrame1(availableFrames[0] || PHOTO_FRAME_OPTIONS[0]);
+    }
+    if (selectedFrame2.id === frameId) {
+      setSelectedFrame2(availableFrames[1] || PHOTO_FRAME_OPTIONS[1]);
+    }
+  };
+
+  const handleRefreshFrames = async () => {
+    const fresh = await fetchAllFrames();
+    setAvailableFrames(fresh);
+  };
 
   // Camera & Filter
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
@@ -233,7 +273,9 @@ export default function App() {
   const renderSingleStripCanvas = (
     frames: string[],
     layoutCount: PhotoLayoutCount,
-    frame: PhotoFrameOption
+    frame: PhotoFrameOption,
+    filter: CustomFilter = 'normal',
+    stickers: StickerItem[] = []
   ): Promise<HTMLCanvasElement> => {
     return new Promise((resolve) => {
       const stripCanvas = document.createElement('canvas');
@@ -298,6 +340,38 @@ export default function App() {
       const mappedSlots = mapTakesToSlots(frames, layoutCount);
       let loaded = 0;
 
+      const finishCanvas = () => {
+        // Draw Stickers if any
+        if (stickers && stickers.length > 0) {
+          stickers.forEach((stk) => {
+            const stkX = (stk.xPct / 100) * stripW;
+            const stkY = (stk.yPct / 100) * stripH;
+            ctx.save();
+            ctx.font = '40px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(stk.emoji, stkX, stkY);
+            ctx.restore();
+          });
+        }
+
+        const footerY = stripH - 52;
+        ctx.fillStyle = frame.textColor;
+        ctx.font = 'bold 16px "Plus Jakarta Sans", sans-serif';
+        ctx.fillText('SATU.KOSONG8 PHOTOBOOTH', stripW / 2, footerY);
+
+        const dateStr = new Date().toLocaleDateString('id-ID', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        });
+        ctx.fillStyle = frame.subTextColor;
+        ctx.font = '13px "Plus Jakarta Sans", sans-serif';
+        ctx.fillText(dateStr, stripW / 2, footerY + 24);
+
+        resolve(stripCanvas);
+      };
+
       mappedSlots.forEach((slot, idx) => {
         const img = new Image();
         img.crossOrigin = 'anonymous';
@@ -321,8 +395,17 @@ export default function App() {
           ctx.fillStyle = frame.photoBorderColor;
           ctx.fillRect(x - 4, y - 4, photoW + 8, photoH + 8);
 
-          // Render photo
+          // Apply filter
+          ctx.save();
+          if (filter === 'bw') {
+            ctx.filter = 'grayscale(100%) contrast(120%) brightness(104%)';
+          } else if (filter === 'warm') {
+            ctx.filter = 'contrast(106%) saturate(125%) sepia(12%) brightness(102%)';
+          } else if (filter === 'vintage') {
+            ctx.filter = 'sepia(35%) contrast(110%) brightness(96%) saturate(110%)';
+          }
           ctx.drawImage(img, x, y, photoW, photoH);
+          ctx.restore();
 
           // Pose letter badge (Pose A, B, C, D)
           ctx.fillStyle = 'rgba(0, 0, 0, 0.72)';
@@ -336,26 +419,14 @@ export default function App() {
 
           loaded++;
           if (loaded === mappedSlots.length) {
-            const footerY = stripH - 52;
-            ctx.fillStyle = frame.textColor;
-            ctx.font = 'bold 16px "Plus Jakarta Sans", sans-serif';
-            ctx.fillText('SATU.KOSONG8 PHOTOBOOTH', stripW / 2, footerY);
-
-            const dateStr = new Date().toLocaleDateString('id-ID', {
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric',
-            });
-            ctx.fillStyle = frame.subTextColor;
-            ctx.font = '13px "Plus Jakarta Sans", sans-serif';
-            ctx.fillText(dateStr, stripW / 2, footerY + 24);
-
-            resolve(stripCanvas);
+            finishCanvas();
           }
         };
         img.onerror = () => {
           loaded++;
-          if (loaded === mappedSlots.length) resolve(stripCanvas);
+          if (loaded === mappedSlots.length) {
+            finishCanvas();
+          }
         };
         img.src = slot.frame;
       });
@@ -411,11 +482,19 @@ export default function App() {
   };
 
   // Generate both frames and twin canvas using DISTINCT photos for each frame!
-  const generateAllStrips = async (frames1: string[], frames2: string[]) => {
+  const generateAllStrips = async (
+    frames1: string[],
+    frames2: string[],
+    customFrame1: PhotoFrameOption = selectedFrame1,
+    customFrame2: PhotoFrameOption = selectedFrame2,
+    filter: CustomFilter = 'normal',
+    stickers1: StickerItem[] = [],
+    stickers2: StickerItem[] = []
+  ) => {
     try {
       const [c1, c2] = await Promise.all([
-        renderSingleStripCanvas(frames1, selectedLayout, selectedFrame1),
-        renderSingleStripCanvas(frames2, selectedLayout, selectedFrame2),
+        renderSingleStripCanvas(frames1, selectedLayout, customFrame1, filter, stickers1),
+        renderSingleStripCanvas(frames2, selectedLayout, customFrame2, filter, stickers2),
       ]);
 
       const twinCanvas = buildTwinSheetCanvas(c1, c2);
@@ -555,9 +634,10 @@ export default function App() {
       } else {
         // Selesai Sesi 1
         if (allowedFramesCount === 1) {
-          // Selesai untuk Paket 1 Frame: langsung buat strip cetak (2 lembar identik)
+          // Selesai untuk Paket 1 Frame: Buka Kustomisasi Foto
           setTimeout(() => {
-            generateAllStrips(updated, updated);
+            setIsCapturing(false);
+            setCurrentStep('CUSTOMIZE');
           }, 400);
         } else {
           // Paket 2 Frame: Buka Layar Transisi Bersiap ke Sesi 2 (Pose Baru untuk Frame 2!)
@@ -575,9 +655,10 @@ export default function App() {
           runShot(activeState.shotIdx + 1, updated, 2);
         }, 600);
       } else {
-        // Selesai Sesi 2 -> Buat strip Lembar 1 (foto sesi 1) & Lembar 2 (foto sesi 2)!
+        // Selesai Sesi 2 -> Buka Kustomisasi Foto untuk Lembar 1 & Lembar 2
         setTimeout(() => {
-          generateAllStrips(capturedFramesSession1, updated);
+          setIsCapturing(false);
+          setCurrentStep('CUSTOMIZE');
         }, 400);
       }
     }
@@ -736,10 +817,43 @@ export default function App() {
             activePackageName={activePackageName}
             selectedFrame1={selectedFrame1}
             selectedFrame2={selectedFrame2}
+            availableFrames={availableFrames}
             onSelectFrame1={(frame) => setSelectedFrame1(frame)}
             onSelectFrame2={(frame) => setSelectedFrame2(frame)}
+            onFrameAdded={handleFrameAdded}
+            onFrameDeleted={handleFrameDeleted}
+            onRefreshFrames={handleRefreshFrames}
             onStartPhotoSession={() => startCaptureSequence()}
             onBack={() => setCurrentStep('LAYOUT_SELECTION')}
+          />
+        )}
+
+        {/* Step 6: CUSTOMIZE (Kustomisasi Posisi Foto, Filter, Stiker, Frame setelah Foto) */}
+        {currentStep === 'CUSTOMIZE' && !isCapturing && (
+          <PhotoCustomizationPage
+            layoutCount={selectedLayout}
+            allowedFramesCount={allowedFramesCount}
+            frame1={selectedFrame1}
+            frame2={selectedFrame2}
+            allAvailableFrames={availableFrames}
+            session1Photos={capturedFramesSession1}
+            session2Photos={
+              allowedFramesCount === 1 ? capturedFramesSession1 : capturedFramesSession2
+            }
+            allRecordedShots={allRecordedShots}
+            onFinishCustomization={(customData) => {
+              setSelectedFrame1(customData.customFrame1);
+              setSelectedFrame2(customData.customFrame2);
+              generateAllStrips(
+                customData.finalPhotos1,
+                customData.finalPhotos2,
+                customData.customFrame1,
+                customData.customFrame2,
+                customData.filter,
+                customData.stickers1,
+                customData.stickers2
+              );
+            }}
           />
         )}
       </div>
@@ -808,32 +922,23 @@ export default function App() {
                   </span>
                 )}
               </div>
-
-              {/* Thumbnail strip of taken shots for this session */}
-              <div className="flex gap-1.5 sm:gap-2 flex-wrap max-w-xs sm:max-w-md justify-end">
-                {Array.from({ length: totalTakesNeeded }).map((_, idx) => (
-                  <div
-                    key={idx}
-                    className="h-14 w-10 sm:h-16 sm:w-12 overflow-hidden rounded-lg border border-white/40 bg-black/70 shadow-lg flex flex-col items-center justify-center text-xs font-bold text-zinc-400"
-                  >
-                    {activeCapturedFrames[idx] ? (
-                      <img
-                        src={activeCapturedFrames[idx]}
-                        alt={`Pose ${String.fromCharCode(65 + idx)}`}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <>
-                        <span className="text-white text-xs font-black">
-                          {String.fromCharCode(65 + idx)}
-                        </span>
-                        <span className="text-[8px] text-zinc-500">#{idx + 1}</span>
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
             </motion.div>
+
+            {/* Live Frame Preview on the side */}
+            <LiveCaptureStripPreview
+              currentFrame={currentFrameOption}
+              selectedLayout={selectedLayout}
+              capturedPhotos={activeCapturedFrames}
+              currentShotIndex={currentShotIndex}
+              totalTakesNeeded={totalTakesNeeded}
+              countdown={countdown}
+              currentSessionIndex={currentSessionFrameIndex}
+              allowedFramesCount={allowedFramesCount}
+              frame1={selectedFrame1}
+              frame2={selectedFrame2}
+              capturedPhotosSession1={capturedFramesSession1}
+              capturedPhotosSession2={capturedFramesSession2}
+            />
 
             {/* Center Countdown */}
             <div className="flex items-center justify-center">

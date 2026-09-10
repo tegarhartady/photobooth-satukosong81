@@ -7,6 +7,7 @@ export type AppStep =
   | 'LAYOUT_SELECTION'
   | 'FRAME_SELECTION'
   | 'PHOTO_SESSION'
+  | 'CUSTOMIZE'
   | 'RESULT';
 
 export type PhotoLayoutCount = 4 | 6 | 8;
@@ -133,6 +134,10 @@ export interface PhotoFrameOption {
   badgeBg: string;
   badgeTextColor: string;
   accentColor: string;
+  isCustom?: boolean;
+  category?: string;
+  createdAt?: number;
+  frameImageUrl?: string;
 }
 
 export const PHOTO_FRAME_OPTIONS: PhotoFrameOption[] = [

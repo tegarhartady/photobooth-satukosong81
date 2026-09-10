@@ -40,55 +40,34 @@ export const CenterCard: React.FC<CenterCardProps> = ({
           </span>
         </div>*/}
 
-        {/* Urban / Streetwear & E-Sports Typography Title */}
+        {/* Typography Title: SATU.KOSONG8 THE PHOTOBOOTH */}
         <div className="flex flex-col items-center select-none text-center">
-          {/* Main Title: SATU.KOSONG8 */}
-          <div className="relative group">
-            <h1 className="font-urban text-4xl sm:text-6xl md:text-7xl tracking-wider uppercase text-white urban-text-3d transition-transform duration-200 hover:scale-[1.01]">
-              SATU<span className="text-red-500">.</span>KOSONG8
-            </h1>
-          </div>
+          <h1 className="font-urban text-5xl sm:text-7xl tracking-wider uppercase text-white drop-shadow-lg">
+            SATU<span className="text-red-600">.</span>KOSONG8
+          </h1>
 
-          {/* Authentic Streetwear Red Box-Logo "THE" */}
-          <div className="my-1.5 sm:my-2.5">
-            <div className="streetwear-box-logo inline-flex items-center justify-center rounded px-6 py-0.5 border border-white/30">
-              <span className="font-street text-xl sm:text-2xl md:text-3xl uppercase tracking-widest text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.7)]">
-                THE
-              </span>
-            </div>
+          <div className="my-2">
+            <span className="bg-red-600 text-white font-street text-xl sm:text-2xl uppercase tracking-widest px-5 py-0.5 rounded shadow">
+              THE PHOTOBOOTH
+            </span>
           </div>
-
-          {/* Secondary Title: PHOTOBOOTH */}
-          <div className="relative">
-            <h2 className="font-urban text-3xl sm:text-5xl md:text-6xl tracking-widest uppercase text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.9)]">
-              PHOTOBOOTH
-            </h2>
-          </div>
-
-          {/* Streetwear Tech Subtitle */}
-          <p className="mt-2 font-esports text-xs sm:text-sm font-semibold tracking-widest text-zinc-300 uppercase">
-            DUAL FRAME STRIP <span className="text-red-500">•</span> LIVE MOTION PHOTO <span className="text-red-500">•</span> INSTANT CLOUD DRIVE
-          </p>
         </div>
 
         {/* Big Signature Streetwear RED "Mulai" Button */}
-        <div className="mt-8 sm:mt-10 flex flex-col items-center gap-3">
+        <div className="mt-8 flex flex-col items-center gap-2">
           <motion.button
             id="start-photobooth-btn"
             onClick={onStart}
             whileHover={{ scale: 1.04 }}
             whileTap={{ scale: 0.96 }}
-            className="group relative flex items-center justify-center gap-3 min-w-[260px] sm:min-w-[340px] rounded-2xl bg-gradient-to-r from-[#b91c1c] via-[#dc2626] to-[#ef4444] px-8 sm:px-12 py-4 sm:py-5 text-white shadow-[0_12px_40px_rgba(220,38,38,0.55)] border-2 border-white/25 transition-all hover:brightness-110 hover:shadow-[0_16px_50px_rgba(239,68,68,0.75)] cursor-pointer"
+            className="flex items-center justify-center gap-3 min-w-[260px] sm:min-w-[320px] rounded-2xl bg-red-600 hover:bg-red-700 px-8 py-4 sm:py-5 text-white shadow-xl shadow-red-600/40 border-2 border-white/40 transition-all cursor-pointer"
           >
-            <Camera className="h-6 w-6 text-white group-hover:rotate-12 transition-transform" />
-            <span className="font-urban text-2xl sm:text-3xl uppercase tracking-wider text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
+            <Camera className="h-6 w-6 text-white" />
+            <span className="font-urban text-2xl sm:text-3xl uppercase tracking-wider text-white">
               SENTUH UNTUK MULAI
             </span>
-            <ArrowRight className="h-6 w-6 text-white group-hover:translate-x-1.5 transition-transform" />
+            <ArrowRight className="h-6 w-6 text-white" />
           </motion.button>
-          <span className="font-esports text-xs tracking-wider text-zinc-400">
-            Sentuh layar untuk melihat panduan & memilih sesi foto
-          </span>
         </div>
       </div>
 
