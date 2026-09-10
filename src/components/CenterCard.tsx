@@ -33,12 +33,12 @@ export const CenterCard: React.FC<CenterCardProps> = ({
         <div className="pointer-events-none absolute -bottom-24 -right-24 h-64 w-64 rounded-full bg-red-600/15 blur-3xl" />
 
         {/* Top Streetwear Brand Tag */}
-        <div className="flex items-center justify-center gap-2 mb-3">
+        {/*<div className="flex items-center justify-center gap-2 mb-3">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-red-500/15 border border-red-500/30 px-3.5 py-1 text-[11px] font-esports font-bold tracking-widest text-red-400 uppercase">
             <span className="h-2 w-2 rounded-full bg-red-500 animate-ping" />
             LIVE PHOTOBOOTH EXPERIENCE // EST. 2024
           </span>
-        </div>
+        </div>*/}
 
         {/* Urban / Streetwear & E-Sports Typography Title */}
         <div className="flex flex-col items-center select-none text-center">
