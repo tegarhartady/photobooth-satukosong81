@@ -59,7 +59,7 @@ export const FrameSelectionPage: React.FC<FrameSelectionPageProps> = ({
   const renderSingleStripPreview = (frame: PhotoFrameOption, label: string, isCurrentTab: boolean) => {
     return (
       <div
-        className={`relative rounded-2xl p-3 shadow-2xl transition-all duration-300 border flex flex-col justify-between ${
+        className={`relative rounded-2xl p-3 shadow-2xl transition-all duration-300 border flex flex-col justify-between overflow-hidden ${
           isCurrentTab ? 'ring-2 ring-white/60 scale-[1.02]' : 'opacity-85'
         }`}
         style={{
@@ -70,8 +70,17 @@ export const FrameSelectionPage: React.FC<FrameSelectionPageProps> = ({
           minHeight: '290px',
         }}
       >
+        {/* Custom Frame Graphic Overlay Image */}
+        {frame.frameImageUrl && (
+          <img
+            src={frame.frameImageUrl}
+            alt="Frame Overlay"
+            className="pointer-events-none absolute inset-0 w-full h-full object-contain z-20 select-none"
+          />
+        )}
+
         {/* Label Tag on Top */}
-        <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 z-10">
+        <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 z-30">
           <span
             className={`px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider shadow-md border ${
               isCurrentTab
@@ -83,25 +92,27 @@ export const FrameSelectionPage: React.FC<FrameSelectionPageProps> = ({
           </span>
         </div>
 
-        {/* Header Branding */}
-        <div className="text-center pt-1 pb-1.5">
-          <div
-            className="font-comic text-[10px] uppercase tracking-wider font-black"
-            style={{ color: frame.textColor }}
-          >
-            SATU.KOSONG8
+        {/* Header Branding (hanya jika bukan custom graphic frame) */}
+        {!frame.frameImageUrl && (
+          <div className="text-center pt-1 pb-1.5">
+            <div
+              className="font-comic text-[10px] uppercase tracking-wider font-black"
+              style={{ color: frame.textColor }}
+            >
+              SATU.KOSONG8
+            </div>
+            <div
+              className="font-comic text-[7px] uppercase tracking-widest font-bold opacity-80"
+              style={{ color: frame.subTextColor }}
+            >
+              THE PHOTOBOOTH
+            </div>
           </div>
-          <div
-            className="font-comic text-[7px] uppercase tracking-widest font-bold opacity-80"
-            style={{ color: frame.subTextColor }}
-          >
-            THE PHOTOBOOTH
-          </div>
-        </div>
+        )}
 
         {/* Photos Grid preview */}
         <div
-          className={`grid gap-1 my-1 ${
+          className={`grid gap-1 my-1 z-10 ${
             selectedLayout === 4 ? 'grid-cols-1' : 'grid-cols-2'
           }`}
         >
@@ -133,25 +144,27 @@ export const FrameSelectionPage: React.FC<FrameSelectionPageProps> = ({
           ))}
         </div>
 
-        {/* Footer Branding & Date */}
-        <div className="text-center pt-1 border-t border-black/10">
-          <div
-            className="text-[7px] font-bold tracking-tight"
-            style={{ color: frame.textColor }}
-          >
-            SATU.KOSONG8 PHOTOBOOTH
+        {/* Footer Branding & Date (hanya jika bukan custom graphic frame) */}
+        {!frame.frameImageUrl && (
+          <div className="text-center pt-1 border-t border-black/10">
+            <div
+              className="text-[7px] font-bold tracking-tight"
+              style={{ color: frame.textColor }}
+            >
+              SATU.KOSONG8 PHOTOBOOTH
+            </div>
+            <div
+              className="text-[6px] opacity-75 font-mono"
+              style={{ color: frame.subTextColor }}
+            >
+              {new Date().toLocaleDateString('id-ID', {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+              })}
+            </div>
           </div>
-          <div
-            className="text-[6px] opacity-75 font-mono"
-            style={{ color: frame.subTextColor }}
-          >
-            {new Date().toLocaleDateString('id-ID', {
-              day: 'numeric',
-              month: 'short',
-              year: 'numeric',
-            })}
-          </div>
-        </div>
+        )}
       </div>
     );
   };
@@ -329,6 +342,11 @@ export const FrameSelectionPage: React.FC<FrameSelectionPageProps> = ({
                       </div>
 
                       <div className="flex items-center gap-1">
+                        {frame.frameImageUrl && (
+                          <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded bg-emerald-600 text-white shadow-sm">
+                            PNG
+                          </span>
+                        )}
                         {frame.isCustom && (
                           <span className="text-[8px] font-black uppercase px-1.5 py-0.5 rounded bg-red-500 text-white shadow-sm">
                             POS

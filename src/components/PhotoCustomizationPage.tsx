@@ -278,7 +278,7 @@ export const PhotoCustomizationPage: React.FC<PhotoCustomizationPageProps> = ({
 
           {/* Physical Strip Card Preview */}
           <div
-            className="relative rounded-2xl p-3 shadow-xl transition-all border flex flex-col justify-between"
+            className="relative rounded-2xl p-3 shadow-xl transition-all border flex flex-col justify-between overflow-hidden"
             style={{
               backgroundColor: activeFrame.bgColor,
               borderColor: activeFrame.borderColor,
@@ -287,25 +287,36 @@ export const PhotoCustomizationPage: React.FC<PhotoCustomizationPageProps> = ({
               minHeight: '380px',
             }}
           >
-            {/* Header Branding */}
-            <div className="text-center pt-1 pb-1">
-              <div
-                className="font-comic text-xs uppercase tracking-wider font-black"
-                style={{ color: activeFrame.textColor }}
-              >
-                SATU.KOSONG8
+            {/* Custom Frame Graphic Overlay Image */}
+            {activeFrame.frameImageUrl && (
+              <img
+                src={activeFrame.frameImageUrl}
+                alt="Frame Overlay"
+                className="pointer-events-none absolute inset-0 w-full h-full object-contain z-20 select-none"
+              />
+            )}
+
+            {/* Header Branding (hanya jika tidak ada custom graphic frame) */}
+            {!activeFrame.frameImageUrl && (
+              <div className="text-center pt-1 pb-1">
+                <div
+                  className="font-comic text-xs uppercase tracking-wider font-black"
+                  style={{ color: activeFrame.textColor }}
+                >
+                  SATU.KOSONG8
+                </div>
+                <div
+                  className="font-comic text-[8px] uppercase tracking-widest font-bold opacity-80"
+                  style={{ color: activeFrame.subTextColor }}
+                >
+                  THE PHOTOBOOTH
+                </div>
               </div>
-              <div
-                className="font-comic text-[8px] uppercase tracking-widest font-bold opacity-80"
-                style={{ color: activeFrame.subTextColor }}
-              >
-                THE PHOTOBOOTH
-              </div>
-            </div>
+            )}
 
             {/* Photo Slots Grid */}
             <div
-              className={`grid gap-1.5 my-1.5 ${
+              className={`grid gap-1.5 my-1.5 z-10 ${
                 layoutCount === 4 ? 'grid-cols-1' : 'grid-cols-2'
               }`}
             >
@@ -369,25 +380,27 @@ export const PhotoCustomizationPage: React.FC<PhotoCustomizationPageProps> = ({
               </div>
             ))}
 
-            {/* Footer Branding */}
-            <div className="text-center pt-1.5 border-t border-black/10">
-              <div
-                className="text-[8px] font-bold tracking-tight"
-                style={{ color: activeFrame.textColor }}
-              >
-                SATU.KOSONG8 PHOTOBOOTH
+            {/* Footer Branding (hanya jika tidak ada custom frame image) */}
+            {!activeFrame.frameImageUrl && (
+              <div className="text-center pt-1.5 border-t border-black/10">
+                <div
+                  className="text-[8px] font-bold tracking-tight"
+                  style={{ color: activeFrame.textColor }}
+                >
+                  SATU.KOSONG8 PHOTOBOOTH
+                </div>
+                <div
+                  className="text-[7px] opacity-75 font-mono"
+                  style={{ color: activeFrame.subTextColor }}
+                >
+                  {new Date().toLocaleDateString('id-ID', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                  })}
+                </div>
               </div>
-              <div
-                className="text-[7px] opacity-75 font-mono"
-                style={{ color: activeFrame.subTextColor }}
-              >
-                {new Date().toLocaleDateString('id-ID', {
-                  day: '2-digit',
-                  month: 'short',
-                  year: 'numeric',
-                })}
-              </div>
-            </div>
+            )}
           </div>
         </div>
 

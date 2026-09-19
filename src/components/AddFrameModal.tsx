@@ -11,6 +11,8 @@ import {
   Check,
   Copy,
   ExternalLink,
+  Upload,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { PhotoFrameOption } from '../types/photobooth';
 import { posApi } from '../services/posApi';
@@ -44,11 +46,38 @@ export const AddFrameModal: React.FC<AddFrameModalProps> = ({
   const [photoBorderColor, setPhotoBorderColor] = useState('#ffffff');
   const [accentColor, setAccentColor] = useState('#34d399');
   const [category, setCategory] = useState('Theme POS');
+  const [frameImageUrl, setFrameImageUrl] = useState('');
+  const [imageFileName, setImageFileName] = useState<string | null>(null);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [copiedCurl, setCopiedCurl] = useState(false);
+
+  // File upload handler (converts file to base64 Data URL)
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.includes('png') && !file.type.includes('webp')) {
+      alert('Disarankan menggunakan format PNG transparan (PNG-24) agar lubang foto tembus pandang.');
+    }
+
+    setImageFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      if (result) {
+        setFrameImageUrl(result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleClearImage = () => {
+    setFrameImageUrl('');
+    setImageFileName(null);
+  };
 
   if (!isOpen) return null;
 
@@ -129,6 +158,7 @@ export const AddFrameModal: React.FC<AddFrameModalProps> = ({
         badgeTextColor: bgColor,
         accentColor,
         category,
+        frameImageUrl: frameImageUrl.trim() || undefined,
       };
 
       const newFrame = await posApi.createFrame(payload);
@@ -138,6 +168,8 @@ export const AddFrameModal: React.FC<AddFrameModalProps> = ({
       // Reset form
       setName('');
       setTagline('');
+      setFrameImageUrl('');
+      setImageFileName(null);
 
       setTimeout(() => {
         setSuccessMessage(null);
@@ -429,31 +461,120 @@ export const AddFrameModal: React.FC<AddFrameModalProps> = ({
                   </div>
                 </div>
 
+                {/* Custom Frame Graphic Image Upload (PNG Transparan) */}
+                <div className="bg-zinc-900/60 p-3.5 rounded-2xl border border-white/10 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <label className="text-xs text-white font-bold flex items-center gap-1.5">
+                        <Upload className="h-4 w-4 text-red-400" />
+                        <span>Upload Gambar Frame Kustom (.PNG Transparan)</span>
+                        <span className="text-[10px] font-normal text-zinc-400">(Opsional)</span>
+                      </label>
+                      <p className="text-[11px] text-zinc-400 mt-0.5">
+                        Format disarankan <strong>PNG-24 Transparan</strong> dengan lubang foto (600×1885 px sesuai panduan).
+                      </p>
+                    </div>
+
+                    {frameImageUrl && (
+                      <button
+                        type="button"
+                        onClick={handleClearImage}
+                        className="text-[11px] font-bold text-red-400 hover:text-red-300 hover:underline cursor-pointer"
+                      >
+                        Hapus Gambar
+                      </button>
+                    )}
+                  </div>
+
+                  {frameImageUrl ? (
+                    <div className="flex items-center gap-3 p-2.5 rounded-xl bg-black/40 border border-emerald-500/40">
+                      <div className="relative h-14 w-9 rounded-lg overflow-hidden bg-zinc-800 border border-white/20 shrink-0 flex items-center justify-center">
+                        <img
+                          src={frameImageUrl}
+                          alt="Frame Preview"
+                          className="h-full w-full object-contain"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-bold text-emerald-400 flex items-center gap-1">
+                          <Check className="h-3.5 w-3.5" />
+                          <span>Gambar Frame Terpasang</span>
+                        </div>
+                        <div className="text-[11px] text-zinc-300 truncate">
+                          {imageFileName || 'URL Gambar Kustom'}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center border-2 border-dashed border-white/20 hover:border-red-500/60 rounded-xl p-4 cursor-pointer bg-black/30 transition-colors">
+                      <input
+                        type="file"
+                        accept="image/png,image/webp"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                      />
+                      <ImageIcon className="h-6 w-6 text-zinc-400 mb-1.5" />
+                      <span className="text-xs font-bold text-zinc-200">
+                        Klik untuk pilih file gambar frame (.PNG)
+                      </span>
+                      <span className="text-[10px] text-zinc-400 mt-0.5">
+                        Atau drag & drop file desain Anda ke sini
+                      </span>
+                    </label>
+                  )}
+
+                  {/* URL Input Alternative */}
+                  <div>
+                    <label className="text-[11px] text-zinc-400 font-semibold block mb-1">
+                      Atau masukkan URL Gambar Frame (Online / CDN):
+                    </label>
+                    <input
+                      type="url"
+                      placeholder="https://domain.com/frame-custom.png"
+                      value={frameImageUrl.startsWith('data:') ? '' : frameImageUrl}
+                      onChange={(e) => {
+                        setFrameImageUrl(e.target.value);
+                        setImageFileName(e.target.value ? 'Online URL Frame' : null);
+                      }}
+                      className="w-full rounded-xl border border-white/20 bg-zinc-900 px-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:border-red-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
                 {/* Live Preview Mini Strip */}
                 <div className="bg-black/50 p-3.5 rounded-2xl border border-white/10 flex items-center justify-between">
                   <div>
                     <div className="text-xs font-bold text-white mb-0.5">Live Preview Strip</div>
                     <div className="text-[11px] text-zinc-400">
-                      Tampilan strip foto dengan kombinasi warna di atas
+                      Tampilan strip foto dengan kombinasi warna {frameImageUrl ? '& grafis frame' : ''} di atas
                     </div>
                   </div>
 
                   <div
-                    className="h-24 w-12 rounded-lg border flex flex-col justify-between p-1 shadow-lg text-center"
+                    className="relative h-28 w-14 rounded-lg border flex flex-col justify-between p-1 shadow-lg text-center overflow-hidden"
                     style={{
                       backgroundColor: bgColor,
                       borderColor: borderColor,
                       color: textColor,
                     }}
                   >
+                    {/* If frame image is present, overlay it */}
+                    {frameImageUrl && (
+                      <img
+                        src={frameImageUrl}
+                        alt="Preview Frame Overlay"
+                        className="absolute inset-0 w-full h-full object-contain pointer-events-none z-10"
+                      />
+                    )}
+
                     <div className="text-[6px] font-black leading-none">SATU.K08</div>
-                    <div className="space-y-0.5">
+                    <div className="space-y-0.5 z-0">
                       <div
-                        className="h-3 w-full rounded-sm"
+                        className="h-3.5 w-full rounded-sm"
                         style={{ backgroundColor: photoBorderColor }}
                       />
                       <div
-                        className="h-3 w-full rounded-sm"
+                        className="h-3.5 w-full rounded-sm"
                         style={{ backgroundColor: photoBorderColor }}
                       />
                     </div>

@@ -321,56 +321,81 @@ export default function App() {
       ctx.fillStyle = frame.bgColor;
       ctx.fillRect(0, 0, stripW, stripH);
 
-      // Frame Border
-      ctx.strokeStyle = frame.borderColor;
-      ctx.lineWidth = 4;
-      ctx.strokeRect(16, 16, stripW - 32, stripH - 32);
+      // Frame Border & Header Branding (hanya digambar jika bukan custom graphic image)
+      if (!frame.frameImageUrl) {
+        ctx.strokeStyle = frame.borderColor;
+        ctx.lineWidth = 4;
+        ctx.strokeRect(16, 16, stripW - 32, stripH - 32);
 
-      // Logo: "SATU.KOSONG8"
-      ctx.textAlign = 'center';
-      ctx.fillStyle = frame.textColor;
-      ctx.font = '900 44px "Titan One", "Luckiest Guy", sans-serif';
-      ctx.fillText('SATU.KOSONG8', stripW / 2, 70);
+        // Logo: "SATU.KOSONG8"
+        ctx.textAlign = 'center';
+        ctx.fillStyle = frame.textColor;
+        ctx.font = '900 44px "Titan One", "Luckiest Guy", sans-serif';
+        ctx.fillText('SATU.KOSONG8', stripW / 2, 70);
 
-      // "THE PHOTOBOOTH"
-      ctx.fillStyle = frame.subTextColor;
-      ctx.font = '700 19px "Titan One", "Luckiest Guy", sans-serif';
-      ctx.fillText('THE PHOTOBOOTH', stripW / 2, 106);
+        // "THE PHOTOBOOTH"
+        ctx.fillStyle = frame.subTextColor;
+        ctx.font = '700 19px "Titan One", "Luckiest Guy", sans-serif';
+        ctx.fillText('THE PHOTOBOOTH', stripW / 2, 106);
+      }
 
       // Apply Zigzag Slot Mapping
       const mappedSlots = mapTakesToSlots(frames, layoutCount);
       let loaded = 0;
 
       const finishCanvas = () => {
-        // Draw Stickers if any
-        if (stickers && stickers.length > 0) {
-          stickers.forEach((stk) => {
-            const stkX = (stk.xPct / 100) * stripW;
-            const stkY = (stk.yPct / 100) * stripH;
-            ctx.save();
-            ctx.font = '40px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(stk.emoji, stkX, stkY);
-            ctx.restore();
-          });
+        const finalizeAndResolve = () => {
+          // Draw Stickers if any
+          if (stickers && stickers.length > 0) {
+            stickers.forEach((stk) => {
+              const stkX = (stk.xPct / 100) * stripW;
+              const stkY = (stk.yPct / 100) * stripH;
+              ctx.save();
+              ctx.font = '40px sans-serif';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText(stk.emoji, stkX, stkY);
+              ctx.restore();
+            });
+          }
+
+          // Footer Text & Date (hanya digambar jika tidak ada custom frame image overlay)
+          if (!frame.frameImageUrl) {
+            const footerY = stripH - 52;
+            ctx.fillStyle = frame.textColor;
+            ctx.font = 'bold 16px "Plus Jakarta Sans", sans-serif';
+            ctx.fillText('SATU.KOSONG8 PHOTOBOOTH', stripW / 2, footerY);
+
+            const dateStr = new Date().toLocaleDateString('id-ID', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            });
+            ctx.fillStyle = frame.subTextColor;
+            ctx.font = '13px "Plus Jakarta Sans", sans-serif';
+            ctx.fillText(dateStr, stripW / 2, footerY + 24);
+          }
+
+          resolve(stripCanvas);
+        };
+
+        // Jika frame memiliki file gambar kustom (PNG Transparan overlay)
+        if (frame.frameImageUrl) {
+          const overlayImg = new Image();
+          overlayImg.crossOrigin = 'anonymous';
+          overlayImg.onload = () => {
+            // Render gambar frame kustom tepat di atas foto-foto
+            ctx.drawImage(overlayImg, 0, 0, stripW, stripH);
+            finalizeAndResolve();
+          };
+          overlayImg.onerror = (err) => {
+            console.warn('Gagal memuat gambar frame kustom:', err);
+            finalizeAndResolve();
+          };
+          overlayImg.src = frame.frameImageUrl;
+        } else {
+          finalizeAndResolve();
         }
-
-        const footerY = stripH - 52;
-        ctx.fillStyle = frame.textColor;
-        ctx.font = 'bold 16px "Plus Jakarta Sans", sans-serif';
-        ctx.fillText('SATU.KOSONG8 PHOTOBOOTH', stripW / 2, footerY);
-
-        const dateStr = new Date().toLocaleDateString('id-ID', {
-          day: 'numeric',
-          month: 'long',
-          year: 'numeric',
-        });
-        ctx.fillStyle = frame.subTextColor;
-        ctx.font = '13px "Plus Jakarta Sans", sans-serif';
-        ctx.fillText(dateStr, stripW / 2, footerY + 24);
-
-        resolve(stripCanvas);
       };
 
       mappedSlots.forEach((slot, idx) => {
