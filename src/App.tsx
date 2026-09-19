@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Maximize2, Minimize2, FlipHorizontal } from 'lucide-react';
+import { RedFiberBackground } from './components/RedFiberBackground';
 import { LiveCameraBackground } from './components/LiveCameraBackground';
 import { CenterCard } from './components/CenterCard';
 import { PhotoboothStepGuide } from './components/PhotoboothStepGuide';
@@ -720,31 +721,38 @@ export default function App() {
     currentSessionFrameIndex === 1 ? selectedFrame1 : selectedFrame2;
 
   return (
-    <main className="relative h-screen w-screen overflow-hidden font-body select-none">
-      {/* 1. Fullscreen Live Camera Background */}
-      <LiveCameraBackground
-        facingMode={facingMode}
-        onToggleFacingMode={() =>
-          setFacingMode((prev) => (prev === 'user' ? 'environment' : 'user'))
-        }
-        filter={filter}
-        videoRef={videoRef}
-        isCapturing={isCapturing}
-      />
+    <main className="relative h-screen w-screen overflow-hidden font-body select-none bg-[#120103]">
+      {/* 1. Red Geometric Fiber Motif Background (Active when not capturing) */}
+      {!isCapturing && <RedFiberBackground />}
+
+      {/* 2. Fullscreen Live Camera Background (Active during shooting) */}
+      <div className={`absolute inset-0 transition-opacity duration-500 ${isCapturing ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none -z-10'}`}>
+        <LiveCameraBackground
+          facingMode={facingMode}
+          onToggleFacingMode={() =>
+            setFacingMode((prev) => (prev === 'user' ? 'environment' : 'user'))
+          }
+          filter={filter}
+          videoRef={videoRef}
+          isCapturing={isCapturing}
+        />
+      </div>
 
       {/* Top Floating Control Bar */}
       <header className="absolute top-5 right-5 z-30 flex items-center gap-2">
-        <button
-          onClick={() =>
-            setFacingMode((prev) => (prev === 'user' ? 'environment' : 'user'))
-          }
-          title="Balik Kamera Depan / Belakang"
-          aria-label="Balik Kamera Depan / Belakang"
-          className="flex items-center gap-1.5 rounded-full border border-white/20 bg-black/50 px-3.5 py-2 text-xs font-semibold text-white/90 shadow-lg backdrop-blur-md transition-all hover:bg-black/70 hover:text-white cursor-pointer"
-        >
-          <FlipHorizontal className="h-4 w-4 text-white" />
-          <span className="hidden sm:inline">Balik Kamera</span>
-        </button>
+        {isCapturing && (
+          <button
+            onClick={() =>
+              setFacingMode((prev) => (prev === 'user' ? 'environment' : 'user'))
+            }
+            title="Balik Kamera Depan / Belakang"
+            aria-label="Balik Kamera Depan / Belakang"
+            className="flex items-center gap-1.5 rounded-full border border-white/20 bg-black/50 px-3.5 py-2 text-xs font-semibold text-white/90 shadow-lg backdrop-blur-md transition-all hover:bg-black/70 hover:text-white cursor-pointer"
+          >
+            <FlipHorizontal className="h-4 w-4 text-white" />
+            <span className="hidden sm:inline">Balik Kamera</span>
+          </button>
+        )}
 
         <button
           onClick={handleToggleFullscreen}
@@ -766,11 +774,6 @@ export default function App() {
         {currentStep === 'HOME' && !isCapturing && (
           <CenterCard
             onStart={() => setCurrentStep('STEP_GUIDE')}
-            filter={filter}
-            setFilter={setFilter}
-            onFlipCamera={() =>
-              setFacingMode((prev) => (prev === 'user' ? 'environment' : 'user'))
-            }
           />
         )}
 
