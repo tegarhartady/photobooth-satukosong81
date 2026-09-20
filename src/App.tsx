@@ -721,7 +721,7 @@ export default function App() {
     currentSessionFrameIndex === 1 ? selectedFrame1 : selectedFrame2;
 
   return (
-    <main className="relative h-screen w-screen overflow-hidden font-body select-none bg-[#120103]">
+    <main className="relative h-screen w-screen overflow-hidden font-body select-none bg-[#4B090B]">
       {/* 1. Red Geometric Fiber Motif Background (Active when not capturing) */}
       {!isCapturing && <RedFiberBackground />}
 
