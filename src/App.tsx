@@ -28,7 +28,6 @@ import {
   VoucherCode,
 } from './types/photobooth';
 import { fetchAllFrames } from './services/frameApi';
-import { posApi } from './services/posApi';
 
 type FilterType = 'normal' | 'warm' | 'vintage' | 'bw';
 
@@ -65,30 +64,6 @@ export default function App() {
       }
     });
   }, []);
-
-  const handleFrameAdded = (newFrame: PhotoFrameOption) => {
-    setAvailableFrames((prev) => {
-      const exists = prev.some((f) => f.id === newFrame.id);
-      return exists ? prev.map((f) => (f.id === newFrame.id ? newFrame : f)) : [...prev, newFrame];
-    });
-    setSelectedFrame1(newFrame);
-  };
-
-  const handleFrameDeleted = async (frameId: string) => {
-    await posApi.deleteFrame(frameId);
-    setAvailableFrames((prev) => prev.filter((f) => f.id !== frameId));
-    if (selectedFrame1.id === frameId) {
-      setSelectedFrame1(availableFrames[0] || PHOTO_FRAME_OPTIONS[0]);
-    }
-    if (selectedFrame2.id === frameId) {
-      setSelectedFrame2(availableFrames[1] || PHOTO_FRAME_OPTIONS[1]);
-    }
-  };
-
-  const handleRefreshFrames = async () => {
-    const fresh = await fetchAllFrames();
-    setAvailableFrames(fresh);
-  };
 
   // Camera & Filter
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
@@ -848,9 +823,6 @@ export default function App() {
             availableFrames={availableFrames}
             onSelectFrame1={(frame) => setSelectedFrame1(frame)}
             onSelectFrame2={(frame) => setSelectedFrame2(frame)}
-            onFrameAdded={handleFrameAdded}
-            onFrameDeleted={handleFrameDeleted}
-            onRefreshFrames={handleRefreshFrames}
             onStartPhotoSession={() => startCaptureSequence()}
             onBack={() => setCurrentStep('LAYOUT_SELECTION')}
           />

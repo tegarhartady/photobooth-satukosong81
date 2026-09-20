@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, Camera, Check, Palette, Sparkles, Layers, Copy, PlusCircle, Settings2 } from 'lucide-react';
+import { ArrowLeft, Camera, Check, Palette, Sparkles, Layers, Copy } from 'lucide-react';
 import {
   PHOTO_FRAME_OPTIONS,
   PhotoFrameOption,
   PhotoLayoutCount,
   mapTakesToSlots,
 } from '../types/photobooth';
-import { AddFrameModal } from './AddFrameModal';
 
 interface FrameSelectionPageProps {
   selectedLayout: PhotoLayoutCount;
@@ -18,9 +17,6 @@ interface FrameSelectionPageProps {
   availableFrames?: PhotoFrameOption[];
   onSelectFrame1: (frame: PhotoFrameOption) => void;
   onSelectFrame2: (frame: PhotoFrameOption) => void;
-  onFrameAdded?: (frame: PhotoFrameOption) => void;
-  onFrameDeleted?: (frameId: string) => void;
-  onRefreshFrames?: () => Promise<void>;
   onStartPhotoSession: () => void;
   onBack: () => void;
 }
@@ -34,14 +30,10 @@ export const FrameSelectionPage: React.FC<FrameSelectionPageProps> = ({
   availableFrames = PHOTO_FRAME_OPTIONS,
   onSelectFrame1,
   onSelectFrame2,
-  onFrameAdded,
-  onFrameDeleted,
-  onRefreshFrames,
   onStartPhotoSession,
   onBack,
 }) => {
   const [activeFrameTab, setActiveFrameTab] = useState<1 | 2>(1);
-  const [isAddFrameModalOpen, setIsAddFrameModalOpen] = useState(false);
 
   const isSingleFrameMode = allowedFramesCount === 1;
 
@@ -289,18 +281,9 @@ export const FrameSelectionPage: React.FC<FrameSelectionPageProps> = ({
                 )}
               </span>
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-mono text-zinc-400 hidden sm:inline">
+                <span className="text-[11px] font-mono text-zinc-400">
                   {currentActiveFrame.name}
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setIsAddFrameModalOpen(true)}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-full border border-red-500/40 bg-red-500/15 text-red-300 hover:bg-red-500/25 text-[10px] font-bold transition-all cursor-pointer"
-                  title="Tambah frame baru atau sinkronisasi dengan backend POS"
-                >
-                  <PlusCircle className="h-3 w-3 text-red-400" />
-                  <span>+ Tambah Frame POS</span>
-                </button>
               </div>
             </div>
 
@@ -459,23 +442,6 @@ export const FrameSelectionPage: React.FC<FrameSelectionPageProps> = ({
           </motion.button>
         </div>
       </div>
-
-      {/* Add & Manage Frame Modal via POS API */}
-      <AddFrameModal
-        isOpen={isAddFrameModalOpen}
-        onClose={() => setIsAddFrameModalOpen(false)}
-        frames={availableFrames}
-        onFrameAdded={(newFrame) => {
-          if (onFrameAdded) onFrameAdded(newFrame);
-          onSelectFrame1(newFrame);
-        }}
-        onFrameDeleted={(frameId) => {
-          if (onFrameDeleted) onFrameDeleted(frameId);
-        }}
-        onRefreshFromApi={async () => {
-          if (onRefreshFrames) await onRefreshFrames();
-        }}
-      />
     </motion.div>
   );
 };

@@ -92,26 +92,41 @@ export interface PhotoFrameOption {
 
 ---
 
-## 4. Tiga Cara Menambahkan Frame Baru
+## 4. Cara Menambahkan Frame Baru dari Backend POS
 
-### Metode A: Melalui Menu Kiosk UI (Paling Cepat)
-1. Jalankan aplikasi kiosk dan klik tombol **Mulai**.
-2. Pilih Paket & Layout hingga tiba di halaman **"Pilih Frame Foto"**.
-3. Di sudut kanan atas terdapat tombol **`+ Tambah Frame POS`**.
-4. Masukkan **Nama Frame** dan **Tagline**.
-5. **Upload Gambar Frame:**
-   - Klik kotak upload **"Upload Gambar Frame Kustom (.PNG Transparan)"** dan pilih file gambar desain PNG Anda (atau drag & drop). File otomatis dikonversi dan disimpan langsung di browser tanpa perlu hosting luar.
-   - Atau Anda bisa memasukkan URL gambar jika di-host di CDN/server online.
-6. Tentukan warna dasar background dan teks menggunakan color picker (atau pilih preset).
-7. Periksa tampilan pada kotak **Live Preview Strip**.
-8. Klik **"Simpan & Terapkan Frame"**. Frame baru langsung aktif di sesi foto dan siap dicetak!
+Aplikasi Photobooth Satu.Kosong8 kini otomatis mengambil daftar frame langsung dari Backend POS Anda saat aplikasi dijalankan (atau dari preset bawaan). Antarmuka Kiosk dijaga tetap bersih dan terfokus untuk pelanggan tanpa tombol admin tambah frame.
 
----
+### Metode Utama: Melalui Backend API POS (Kasir / Admin Dashboard)
+Hubungkan backend POS Anda (melalui variabel `VITE_POS_API_URL`), backend Anda cukup menyediakan endpoint REST API berikut:
 
-### Metode B: Melalui Backend API POS (Otomatis dari Kasir/Admin)
-Jika Anda menghubungkan backend POS (via `VITE_POS_API_URL`), backend Anda cukup menyediakan endpoint REST API berikut:
+#### 1. Endpoint Daftar Frame (Diambil Otomatis oleh Kiosk):
+- **Method:** `GET`
+- **Endpoint:** `/api/frames`
+- **Response Format:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "frame-01",
+      "name": "Sakura Bloom Edition",
+      "tagline": "Spring Festival 2025",
+      "bgColor": "#fff1f2",
+      "textColor": "#9f1239",
+      "subTextColor": "#e11d48",
+      "borderColor": "#fda4af",
+      "photoBorderColor": "#ffffff",
+      "badgeBg": "#9f1239",
+      "badgeTextColor": "#ffffff",
+      "accentColor": "#f43f5e",
+      "frameImageUrl": "https://domain-anda.com/assets/frames/sakura-bloom-600x1885.png",
+      "category": "Seasonal Event"
+    }
+  ]
+}
+```
 
-#### 1. Tambah Frame Baru:
+#### 2. Tambah Frame Baru dari POS:
 - **Method:** `POST`
 - **Endpoint:** `/api/frames`
 - **Request Body (JSON):**

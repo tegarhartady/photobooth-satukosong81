@@ -54,29 +54,24 @@ export const RedFiberBackground: React.FC<{ className?: string }> = ({ className
         return dx * dx + dy * dy < 1.0;
       };
 
-      // Generate dense burst clusters strictly at the corners, perimeter, and sides
+      // Generate rich yet balanced burst clusters along corners, sides, and outer perimeter
       const clusters = [
-        // Top-Left Corner & Top Perimeter
-        { cx: width * 0.05, cy: height * 0.1, count: 280, spread: width * 0.15 },
-        { cx: width * 0.2, cy: height * 0.05, count: 240, spread: width * 0.12 },
-        // Top-Right Corner & Top Perimeter
-        { cx: width * 0.95, cy: height * 0.08, count: 290, spread: width * 0.15 },
-        { cx: width * 0.8, cy: height * 0.05, count: 240, spread: width * 0.12 },
-        // Left Edge & Flank
-        { cx: width * 0.04, cy: height * 0.4, count: 280, spread: width * 0.1 },
-        { cx: width * 0.05, cy: height * 0.65, count: 280, spread: width * 0.1 },
-        // Right Edge & Flank
-        { cx: width * 0.96, cy: height * 0.38, count: 290, spread: width * 0.1 },
-        { cx: width * 0.95, cy: height * 0.68, count: 290, spread: width * 0.1 },
-        // Bottom-Left Corner & Bottom Perimeter
-        { cx: width * 0.06, cy: height * 0.92, count: 300, spread: width * 0.15 },
-        { cx: width * 0.22, cy: height * 0.95, count: 250, spread: width * 0.12 },
-        // Bottom-Right Corner & Bottom Perimeter
-        { cx: width * 0.94, cy: height * 0.9, count: 320, spread: width * 0.15 },
-        { cx: width * 0.78, cy: height * 0.94, count: 250, spread: width * 0.12 },
-        // Subtle Top-Center and Bottom-Center Spikes (pointing outward away from center)
-        { cx: width * 0.5, cy: height * 0.03, count: 180, spread: width * 0.08 },
-        { cx: width * 0.5, cy: height * 0.97, count: 180, spread: width * 0.08 },
+        // Top-Left Corner & Flank
+        { cx: width * 0.05, cy: height * 0.08, count: 120, spread: width * 0.14 },
+        // Top-Right Corner & Flank
+        { cx: width * 0.95, cy: height * 0.08, count: 120, spread: width * 0.14 },
+        // Bottom-Left Corner & Flank
+        { cx: width * 0.05, cy: height * 0.92, count: 130, spread: width * 0.14 },
+        // Bottom-Right Corner & Flank
+        { cx: width * 0.95, cy: height * 0.92, count: 130, spread: width * 0.14 },
+        // Left Edge Flank
+        { cx: width * 0.03, cy: height * 0.5, count: 85, spread: width * 0.1 },
+        // Right Edge Flank
+        { cx: width * 0.97, cy: height * 0.5, count: 85, spread: width * 0.1 },
+        // Top Perimeter Accent
+        { cx: width * 0.5, cy: height * 0.04, count: 70, spread: width * 0.1 },
+        // Bottom Perimeter Accent
+        { cx: width * 0.5, cy: height * 0.96, count: 70, spread: width * 0.1 },
       ];
 
       // PRNG seeded for consistent crisp pattern
@@ -87,22 +82,22 @@ export const RedFiberBackground: React.FC<{ className?: string }> = ({ className
       };
 
       const lineColors = [
-        'rgba(255, 65, 0, 0.5)',   // Vivid red-orange
-        'rgba(255, 115, 0, 0.6)',  // Fiery orange
-        'rgba(255, 160, 25, 0.7)', // Bright amber/gold
-        'rgba(230, 35, 15, 0.45)', // Crimson
-        'rgba(255, 190, 60, 0.75)',// Luminous golden spark
-        'rgba(190, 25, 25, 0.35)', // Darker background strand
+        'rgba(255, 65, 0, 0.48)',   // Vivid red-orange
+        'rgba(255, 115, 0, 0.55)',  // Fiery orange
+        'rgba(255, 160, 25, 0.65)', // Bright amber/gold
+        'rgba(230, 35, 15, 0.42)',  // Crimson
+        'rgba(255, 190, 60, 0.7)',   // Luminous golden spark
+        'rgba(190, 25, 25, 0.32)',  // Darker background strand
       ];
 
       for (const cluster of clusters) {
         for (let i = 0; i < cluster.count; i++) {
           const angle = random() * Math.PI * 2;
-          const length = 90 + random() * (Math.max(width, height) * 0.38);
+          const length = 85 + random() * (Math.max(width, height) * 0.35);
           const startDist = random() * cluster.spread;
 
-          const x1 = cluster.cx + Math.cos(angle) * startDist + (random() - 0.5) * 60;
-          const y1 = cluster.cy + Math.sin(angle) * startDist + (random() - 0.5) * 60;
+          const x1 = cluster.cx + Math.cos(angle) * startDist + (random() - 0.5) * 55;
+          const y1 = cluster.cy + Math.sin(angle) * startDist + (random() - 0.5) * 55;
 
           // If starting point is in center zone, push it outward
           if (isInCenterZone(x1, y1)) continue;
@@ -123,7 +118,7 @@ export const RedFiberBackground: React.FC<{ className?: string }> = ({ className
             y2 = midY;
           }
 
-          const strokeWidth = 0.6 + random() * 1.8;
+          const strokeWidth = 0.5 + random() * 1.5;
           const color = lineColors[Math.floor(random() * lineColors.length)];
 
           ctx.beginPath();
@@ -135,36 +130,36 @@ export const RedFiberBackground: React.FC<{ className?: string }> = ({ className
         }
       }
 
-      // Perimeter razor needles hugging the window edges
-      for (let i = 0; i < 350; i++) {
+      // Perimeter razor needles hugging the window edges (subtle accent lines)
+      for (let i = 0; i < 130; i++) {
         // Pick an edge (0: top, 1: bottom, 2: left, 3: right)
         const edge = Math.floor(random() * 4);
         let x1 = 0;
         let y1 = 0;
         if (edge === 0) {
           x1 = random() * width;
-          y1 = random() * (height * 0.18);
+          y1 = random() * (height * 0.16);
         } else if (edge === 1) {
           x1 = random() * width;
-          y1 = height - random() * (height * 0.18);
+          y1 = height - random() * (height * 0.16);
         } else if (edge === 2) {
-          x1 = random() * (width * 0.18);
+          x1 = random() * (width * 0.16);
           y1 = random() * height;
         } else {
-          x1 = width - random() * (width * 0.18);
+          x1 = width - random() * (width * 0.16);
           y1 = random() * height;
         }
 
         if (isInCenterZone(x1, y1)) continue;
 
         const angle = random() * Math.PI * 2;
-        const length = 120 + random() * 320;
+        const length = 95 + random() * 260;
         let x2 = x1 + Math.cos(angle) * length;
         let y2 = y1 + Math.sin(angle) * length;
 
         if (isInCenterZone(x2, y2)) continue;
 
-        const strokeWidth = 0.5 + random() * 1.5;
+        const strokeWidth = 0.5 + random() * 1.4;
         const color = lineColors[Math.floor(random() * lineColors.length)];
 
         ctx.beginPath();
